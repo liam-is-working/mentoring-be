@@ -19,7 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -57,6 +56,34 @@ public class AuthService {
         }
     }
 
+    public Mono<String> sendPasswordResetEmail(String email) throws FirebaseError {
+        if (accountsRepository.findByEmail(email).isEmpty())
+            throw FirebaseError.builder()
+                    .code(HttpStatus.CONFLICT.value())
+                    .errorMessages(List.of("Cannot find account in db with email: " + email))
+                    .build();
+        return firebaseAuthRepo.sendResetPasswordEmail(email)
+                .handle((sendEmailVerificationResponse, stringSynchronousSink) -> {
+                    if (sendEmailVerificationResponse.getError() != null) {
+                        stringSynchronousSink.error(handleError(sendEmailVerificationResponse));
+                    } else {
+                        stringSynchronousSink.next(sendEmailVerificationResponse.getEmail());
+                    }
+                });
+
+    }
+
+    public Mono<String> applyPasswordChange(String oobCode, String newPassword) {
+        return firebaseAuthRepo.verifyPasswordChangeEmail(oobCode, newPassword)
+                .handle((passwordChangeRes, stringSynchronousSink) -> {
+                    if (passwordChangeRes.getError() != null) {
+                        stringSynchronousSink.error(handleError(passwordChangeRes));
+                    } else {
+                        stringSynchronousSink.next(passwordChangeRes.getEmail());
+                    }
+                });
+    }
+
     public Mono<Account> finishSigningUpWithEmailVerification(String oob) {
         return firebaseAuthRepo.verifyEmail(oob)
                 .handle(((emailVerificationResponse, synchronousSink) -> {
@@ -64,13 +91,13 @@ public class AuthService {
                         synchronousSink.error(handleError(emailVerificationResponse));
                     } else {
                         //create new account and user profile of the account
-                        try{
+                        try {
                             var userRecord = getUserRecord(emailVerificationResponse.getEmail());
                             var newAccount = createNewAccountAndProfile(emailVerificationResponse.getEmail(),
                                     emailVerificationResponse.getLocalId(), userRecord.getDisplayName());
 
                             synchronousSink.next(newAccount);
-                        }catch (Exception ex){
+                        } catch (Exception ex) {
                             try {
                                 firebaseAuth.deleteUser(emailVerificationResponse.getLocalId());
                             } catch (FirebaseAuthException e) {

@@ -28,6 +28,16 @@ public class FirebaseAuthRepository {
                 .exchangeToMono(clientResponse -> clientResponse.bodyToMono(SendEmailVerificationResponse.class));
     }
 
+
+    public Mono<SendEmailVerificationResponse> sendResetPasswordEmail(String email){
+        return webClient
+                .post()
+                .uri(uriBuilder -> uriBuilder.pathSegment("accounts:sendOobCode").queryParam("key", appKey).build())
+                .bodyValue(Map.of("requestType", "PASSWORD_RESET",
+                        "email", email))
+                .exchangeToMono(clientResponse -> clientResponse.bodyToMono(SendEmailVerificationResponse.class));
+    }
+
 //    public Mono<SignUpByEmailPasswordResponse> signUpAnonymously(){
 //        return webClient
 //                .post()
@@ -53,6 +63,15 @@ public class FirebaseAuthRepository {
                 .bodyValue(Map.of("oobCode", oobCode))
                 .exchangeToMono(clientResponse -> clientResponse.bodyToMono(EmailVerificationResponse.class));
     }
+
+    public Mono<SendEmailVerificationResponse> verifyPasswordChangeEmail(String oobCode, String newPassword){
+        return webClient
+                .post()
+                .uri(uriBuilder -> uriBuilder.pathSegment("accounts:resetPassword").queryParam("key", appKey).build())
+                .bodyValue(VerifyPasswordChangeEmailRequest.builder().newPassword(newPassword).oobCode(oobCode).build())
+                .exchangeToMono(clientResponse -> clientResponse.bodyToMono(SendEmailVerificationResponse.class));
+    }
+
 
 
 }

@@ -78,6 +78,51 @@ paths:
                 $ref: '#/components/schemas/SignInResponseBody'
         404:
           description: Can't find account with email with password or email has not been verified
+  /sign-in/send-rest-email:
+    post:
+      tags:
+        - Sign in
+      summary: Send reset password to email
+      operationId: sendResetPasswrod
+      requestBody:
+        content:
+          appication/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: abc@gmail.com
+      responses:
+        200:
+          description: Reset email is sent
+        409:
+          description: Can't find email in database (might not verified yet)
+  /sign-in/apply-password-change:
+    post:
+      tags:
+        - Sign in
+      summary: apply password change
+      operationId: applyPasswordChange
+      requestBody:
+        content:
+          appication/json:
+            schema:
+              type: object
+              properties:
+                oobCode:
+                  type: string
+                  example: asdascawc
+                  description: get from the link in reset password email
+                password:
+                  type: string
+                  example: passWord!1
+                  description: new password
+      responses:
+        200:
+          description: Apply successfully
+        409:
+          description: oob code is not valid,...
   /user-profile:
     post:
       tags:
