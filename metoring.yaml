@@ -1,0 +1,207 @@
+openapi: 3.0.3
+info:
+  title: Title
+  description: Title
+  version: 1.0.0
+servers:
+  - url: 'https'
+paths:
+  /sign-up/with-password:
+    post:
+      tags:
+        - Sign up
+      summary: Create a new account with email and password
+      operationId: signUpWithPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUp'
+      responses:
+        200:
+          description: verification mail has been sent
+          content:
+            application/json:
+              schema:
+                example: email@gmail
+                type: string
+
+        400:
+          description: validation fail
+          content:
+            appication/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrors'
+        409:
+          description: email has been used
+  /sign-in/with-google:
+    post:
+      tags:
+        - Sign in
+      summary: Create or link an account to its google account and return user information and access token
+      operationId: signInWithGoogle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInWithGoogleRequest'
+      responses:
+        200:
+          description: successfully sign in with google
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignInResponseBody'
+        400:
+          description: validation fail
+          content:
+            appication/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrors'
+  /sign-in/with-password:
+    post:
+      tags:
+        - Sign in
+      summary: Sign in with email and password
+      operationId: signInWithPassword
+      requestBody:
+        content:
+          appication/json:
+            schema:
+              $ref: '#/components/schemas/SignIn'
+      responses:
+        200:
+          description: Sign in successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignInResponseBody'
+        404:
+          description: Can't find account with email with password or email has not been verified
+  /user-profile:
+    post:
+      tags:
+        - User profile
+      summary: Update user profile
+      operationId: updateUserProfile
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+      responses:
+        200:
+          description: update user profile successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        400:
+          description: validation fail
+          content:
+            appication/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrors'
+        403:
+          description: unathorized access
+
+components:
+  schemas:
+    ValidationErrors:
+      type: array
+      items:
+        properties:
+          field:
+            type: string
+          errorDetail:
+            type: string
+    SignUp:
+      type: object
+      properties:
+        email:
+          type: string
+          pattern: ^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$
+          example: email@
+        fullName:
+          type: string
+        password:
+          type: string
+      required: [email, fullName, password]
+    SignIn:
+      type: object
+      properties:
+        email:
+          type: string
+          pattern: ^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$
+          example: email@gmail.com
+        password:
+          type: string
+      required: [email, password]
+    SignInResponseBody:
+      type: object
+      properties:
+        email:
+          type: string
+          example: email@gmail.com
+        accessToken:
+          type: string
+          example: IA1239akYAYJHKJ
+        role:
+          type: string
+          enum:
+            [ mentor, mentee, mentor-mentee ]
+        isLocked:
+          type: boolean
+        fullName:
+          type: string
+        dob:
+          type: string
+          format: dd-MM-yyyy
+          example: 27/04/2001
+        sex:
+          type: boolean
+        avatarUrl:
+          type: string
+    SignInWithGoogleRequest:
+          type: object
+          properties:
+            idToken:
+              type: string
+              description: firebase generated token for the user
+            email:
+              type: string
+              example: abc@gmail.com
+            localId:
+              type: string
+              description: firebase user id
+            fullName:
+              type: string
+              description: full name fetched from Google account
+            avatarUrl:
+              type: string
+              description: avatar url fetched from Google account
+          required: [idToken,email,fullName,localId]
+    UserProfile:
+      properties:
+        email:
+          type: string
+          example: email@gmail.com
+        fullName:
+          type: string
+        dob:
+          type: string
+          format: dd-MM-yyyy
+          example: 27/04/2001
+        sex:
+          type: boolean
+        avatarUrl:
+          type: string
+        coverUrl:
+          type: string
+

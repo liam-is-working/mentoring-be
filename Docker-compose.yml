@@ -1,0 +1,28 @@
+version: '2'
+services:
+  app:
+    image: 'liamisworking/mentoring-api:v1'
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app
+    depends_on:
+      - db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
+      - SPRING_DATASOURCE_USERNAME=liam
+      - SPRING_DATASOURCE_PASSWORD=123
+    ports:
+      - 8080:8080
+  db:
+      image: postgres:latest
+      restart: always
+      container_name: db
+      ports:
+        - 5432:5432
+      environment:
+        - POSTGRES_DB=postgres
+        - POSTGRES_USER=liam
+        - POSTGRES_PASSWORD=123
+      volumes:
+        - ./init.sql:/docker-entrypoint-initdb.d/init.sql
