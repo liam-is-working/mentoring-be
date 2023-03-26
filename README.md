@@ -10,7 +10,7 @@
   
   - **Web server** is hosted at: http://localhost:8080/mentoring  
   
-  - **Postgres database** is hosted at: jdbc:postgresql://localhost:5432      
+  - **Postgres database** is hosted at: jdbc:postgresql://localhost:5433      
     - **database name**: postgres  
     - **database user**: liam  
     - **database password**: 123   
