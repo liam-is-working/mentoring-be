@@ -20,3 +20,5 @@ create table user_profiles
     avatar_url   varchar(255),
     cover_url    varchar(255)
 )
+
+drop table user_profiles

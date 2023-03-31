@@ -5,7 +5,12 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
+import java.sql.Date;
+import java.sql.SQLType;
 import java.util.UUID;
 
 @Entity
@@ -20,10 +25,14 @@ public class UserProfile {
 
     private String fullName;
     private String description;
-    private String dob;
-    private String gender;
+    @Basic
+    private Date dob;
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
     private String avatarUrl;
     private String coverUrl;
+    @JdbcTypeCode(SqlTypes.JSON)
+    private String cv;
 
     @OneToOne(cascade = CascadeType.MERGE)
     @MapsId

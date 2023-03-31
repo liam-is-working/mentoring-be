@@ -1,6 +1,7 @@
 package com.example.mentoringapis.service;
 
 import com.example.mentoringapis.entities.Account;
+import com.example.mentoringapis.entities.Gender;
 import com.example.mentoringapis.entities.UserProfile;
 import com.example.mentoringapis.errors.FirebaseError;
 import com.example.mentoringapis.models.downStreamModels.FirebaseBaseResponse;
@@ -94,7 +95,7 @@ public class AuthService {
                         try {
                             var userRecord = getUserRecord(emailVerificationResponse.getEmail());
                             var newAccount = createNewAccountAndProfile(emailVerificationResponse.getEmail(),
-                                    emailVerificationResponse.getLocalId(), userRecord.getDisplayName());
+                                    emailVerificationResponse.getLocalId(), userRecord.getDisplayName(), userRecord.getPhotoUrl());
 
                             synchronousSink.next(newAccount);
                         } catch (Exception ex) {
@@ -187,19 +188,21 @@ public class AuthService {
                 .map(account -> SignInRes.buildFromAccount(account, jwtTokenProvider))
                 .orElseGet(() -> {
                     //create account in db
-                    var newAccount = createNewAccountAndProfile(request.getEmail(), request.getLocalId(), request.getFullName());
+                    var newAccount = createNewAccountAndProfile(request.getEmail(), request.getLocalId(), request.getFullName(), request.getAvatarUrl());
                     return SignInRes.buildFromAccount(newAccount, jwtTokenProvider);
                 });
     }
 
-    private Account createNewAccountAndProfile(String email, String firebaseId, String fullName) {
+    private Account createNewAccountAndProfile(String email, String firebaseId, String fullName, String avatarUrl) {
         var newAccount = new Account(email,
                 firebaseId, false);
         var newProfile = new UserProfile();
-        newProfile.setGender("Unknown");
+        newProfile.setGender(Gender.others);
         newProfile.setFullName(fullName);
         newAccount.setUserProfile(newProfile);
         newProfile.setAccount(newAccount);
+        newProfile.setAvatarUrl(avatarUrl);
+
         return accountsRepository.save(newAccount);
     }
 }

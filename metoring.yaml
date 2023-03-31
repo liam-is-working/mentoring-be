@@ -123,12 +123,12 @@ paths:
           description: Apply successfully
         409:
           description: oob code is not valid,...
-  /user-profile:
+  /user-profile/current:
     post:
       tags:
         - User profile
-      summary: Update user profile
-      operationId: updateUserProfile
+      summary: Update current user profile
+      operationId: updateCurrentUserProfile
       parameters:
         - in: header
           name: Authorization
@@ -143,6 +143,32 @@ paths:
       responses:
         200:
           description: update user profile successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        400:
+          description: validation fail
+          content:
+            appication/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrors'
+        403:
+          description: unathorized access
+    get:
+      tags:
+        - User profile
+      summary: get current user profile
+      operationId: getCurrentUserProfile
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: fetch current profile
           content:
             application/json:
               schema:
@@ -209,8 +235,10 @@ components:
           type: string
           format: dd-MM-yyyy
           example: 27/04/2001
-        sex:
-          type: boolean
+        gender:
+          type: string
+          enum:
+            ["male", "female", "others"]
         avatarUrl:
           type: string
     SignInWithGoogleRequest:
@@ -241,10 +269,12 @@ components:
           type: string
         dob:
           type: string
-          format: dd-MM-yyyy
-          example: 27/04/2001
-        sex:
-          type: boolean
+          format: yyyy-MM-dd
+          example: 2001-04-27
+        gender:
+          type: string
+          enum:
+            ["male", "female", "others"]
         avatarUrl:
           type: string
         coverUrl:

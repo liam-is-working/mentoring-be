@@ -5,6 +5,8 @@ import com.example.mentoringapis.security.JwtTokenProvider;
 import lombok.Builder;
 import lombok.Data;
 
+import java.sql.Date;
+
 @Data
 @Builder
 public class SignInRes {
@@ -23,9 +25,9 @@ public class SignInRes {
         return SignInRes.builder()
                 .accessToken(accessToken)
                 .avatarUrl(userProfile.getAvatarUrl())
-                .dob(userProfile.getDob())
+                .dob(String.valueOf(userProfile.getDob()))
                 .email(account.getEmail())
-                .sex(userProfile.getGender())
+                .sex(userProfile.getGender().name())
                 .isLocked(false)
                 .role(account.isMentor() ? "MENTOR" : "MENTEE")
                 .fullName(userProfile.getFullName())
