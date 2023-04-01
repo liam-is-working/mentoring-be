@@ -29,7 +29,7 @@ public class UserProfileController {
     }
 
     @RequestMapping(path = "/cv/current", method = RequestMethod.POST)
-    public CvInformation updateMyCv(Authentication authentication, @RequestBody CvInformation cv) throws JsonProcessingException {
+    public CvInformation updateMyCv(Authentication authentication, @Valid @RequestBody CvInformation cv) throws JsonProcessingException {
         var currentUser = (CustomUserDetails) authentication.getPrincipal();
         var cvString = userProfileService.updateCv(cv, currentUser.getAccount().getId()).getCv();
         return objectMapper.readValue(cvString, CvInformation.class);

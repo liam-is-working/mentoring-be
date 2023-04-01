@@ -78,7 +78,7 @@ paths:
                 $ref: '#/components/schemas/SignInResponseBody'
         404:
           description: Can't find account with email with password or email has not been verified
-  /sign-in/send-rest-email:
+  /sign-in/send-reset-email:
     post:
       tags:
         - Sign in
@@ -173,6 +173,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserProfile'
+        403:
+          description: unathorized access, current access-token is not valid
+  /user-profile/cv/current:
+    post:
+      tags:
+        - User profile
+      summary: Update current user CV information
+      operationId: updateCurrentUserProfileCv
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileCv'
+      responses:
+        200:
+          description: update user profile successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileCv'
         400:
           description: validation fail
           content:
@@ -181,6 +207,26 @@ paths:
                 $ref: '#/components/schemas/ValidationErrors'
         403:
           description: unathorized access
+    get:
+      tags:
+        - User profile
+      summary: get current user profile cv
+      operationId: getCurrentUserProfileCv
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: fetch current profile Cv
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileCv'
+        403:
+          description: unathorized access, current access-token is not valid
 
 components:
   schemas:
@@ -279,4 +325,144 @@ components:
           type: string
         coverUrl:
           type: string
+    UserProfileCv:
+      example:
+        {
+          "workingExps": [
+            {
+              "position": "string",
+              "company": "string",
+              "startDate": "2020-02-13",
+              "endDate": "2020-02-13",
+              "description": "string",
+              "workingHere": false
+            }
+          ],
+          "learningExps": [
+            {
+              "school": "string",
+              "major": "string",
+              "startDate": "2020-02-13",
+              "endDate": "2020-02-13",
+              "description": "string"
+            }
+          ],
+          "socialActivities": [
+            {
+              "organization": "string",
+              "position": "string",
+              "startDate": "2020-02-13",
+              "endDate": "2020-02-13",
+              "description": "string",
+              "attendingThis": false
+            }
+          ],
+          "achievements": [
+            {
+              "name": "string",
+              "organization": "string",
+              "achievingDate": "2020-02-13",
+              "description": "string"
+            }
+          ],
+          "certificates": [
+            {
+              "name": "string",
+              "organization": "string",
+              "achievingDate": "2020-02-13",
+              "expiryDate": "2020-02-13",
+              "description": "string"
+            }
+          ],
+          "skills": [
+            {
+              "name": "string",
+              "description": "string"
+            }
+          ]
+        }
+      properties:
+        workinExps:
+          type: array
+          properties:
+            position:
+              type: string
+            company:
+              type: string
+            isWorkingHere:
+              type: boolean
+            startDate:
+              type: string
+              format: yyyy-MM-dd
+            endDate:
+              type: string
+              format: yyyy-MM-dd
+            description:
+              type: string
+        learningExps:
+          type: array
+          properties:
+            school:
+              type: string
+            major:
+              type: string
+            startDate:
+              type: string
+              format: yyyy-MM-dd
+            endDate:
+              type: string
+              format: yyyy-MM-dd
+            description:
+              type: string
+        socialActivities:
+          type: array
+          properties:
+            organization:
+              type: string
+            position:
+              type: string
+            isAttendingThis:
+              type: string
+            startDate:
+              type: string
+              format: yyyy-MM-dd
+            endDate:
+              type: string
+              format: yyyy-MM-dd
+            description:
+              type: string
+        achievements:
+          type: array
+          properties:
+            name:
+              type: string
+            organization:
+              type: string
+            achievingDate:
+              type: string
+              format: yyyy-MM-dd
+            description:
+              type: string
+        certificates:
+          type: array
+          properties:
+            name:
+              type: string
+            organization:
+              type: string
+            achievingDate:
+              type: string
+              format: yyyy-MM-dd
+            expiryDate:
+              type: string
+              format: yyyy-MM-dd
+            description:
+              type: string
+        skills:
+          type: array
+          properties:
+            name:
+              type: string
+            description:
+              type: string
 

@@ -1,19 +1,26 @@
 package com.example.mentoringapis.models.upStreamModels;
 
+import com.example.mentoringapis.validation.CheckStringDate;
+import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Getter
 @Setter
 public class CvInformation {
+    @Valid
     List<WorkingExp> workingExps;
+    @Valid
     List<LearningExp> learningExps;
+    @Valid
     List<SocialActivity> socialActivities;
+    @Valid
     List<Achievement> achievements;
+    @Valid
     List<Certificate> certificates;
+    @Valid
     List<Skill> skills;
 
     @Getter
@@ -22,8 +29,10 @@ public class CvInformation {
         String position;
         String company;
         boolean isWorkingHere;
-        LocalDate startDate;
-        LocalDate endDate;
+        @CheckStringDate
+        String startDate;
+        @CheckStringDate
+        String endDate;
         String description;
     }
 
@@ -32,8 +41,10 @@ public class CvInformation {
     public static class LearningExp{
         String school;
         String major;
-        LocalDate startDate;
-        LocalDate endDate;
+        @CheckStringDate
+        String startDate;
+        @CheckStringDate
+        String endDate;
         String description;
     }
 
@@ -43,8 +54,10 @@ public class CvInformation {
         String organization;
         String position;
         boolean isAttendingThis;
-        LocalDate startDate;
-        LocalDate endDate;
+        @CheckStringDate
+        String startDate;
+        @CheckStringDate
+        String endDate;
         String description;
     }
 
@@ -53,7 +66,8 @@ public class CvInformation {
     public static class Achievement{
         String name;
         String organization;
-        LocalDate achievingDate;
+        @CheckStringDate
+        String achievingDate;
         String description;
     }
 
@@ -62,8 +76,10 @@ public class CvInformation {
     public static class Certificate{
         String name;
         String organization;
-        LocalDate achievingDate;
-        LocalDate expiryDate;
+        @CheckStringDate
+        String achievingDate;
+        @CheckStringDate
+        String expiryDate;
         String description;
     }
 

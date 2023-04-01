@@ -26,12 +26,13 @@ public class UserProfileService {
         return userProfileRepository.findUserProfileByAccount_Id(profileId)
                 .map(prof -> {
                     prof.setFullName(request.getFullName());
-                    prof.setDob(Date.valueOf(Optional.ofNullable(request.getDob()).orElse(LocalDate.now())));
                     prof.setGender(request.getGender());
                     prof.setAvatarUrl(request.getAvatarUrl());
                     prof.setCoverUrl(request.getCoverUrl());
                     prof.setDescription(request.getDescription());
-
+                    if(request.getDob() != null){
+                        prof.setDob(Date.valueOf(request.getDob()));
+                    }
                     return userProfileRepository.save(prof);
                 }).map(UserProfileResponse::fromUserProfile).orElse(null);
     }
