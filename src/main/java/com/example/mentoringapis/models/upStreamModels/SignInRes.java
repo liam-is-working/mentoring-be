@@ -1,11 +1,13 @@
 package com.example.mentoringapis.models.upStreamModels;
 
 import com.example.mentoringapis.entities.Account;
+import com.example.mentoringapis.entities.Gender;
 import com.example.mentoringapis.security.JwtTokenProvider;
 import lombok.Builder;
 import lombok.Data;
 
 import java.sql.Date;
+import java.util.Optional;
 
 @Data
 @Builder
@@ -27,7 +29,7 @@ public class SignInRes {
                 .avatarUrl(userProfile.getAvatarUrl())
                 .dob(String.valueOf(userProfile.getDob()))
                 .email(account.getEmail())
-                .sex(userProfile.getGender().name())
+                .sex(Optional.ofNullable(userProfile.getGender()).map(Enum::name).orElse(Gender.others.name()))
                 .isLocked(false)
                 .role(account.isMentor() ? "MENTOR" : "MENTEE")
                 .fullName(userProfile.getFullName())

@@ -10,6 +10,9 @@ import java.util.List;
 @Getter
 @Setter
 public class CvInformation {
+
+    String description;
+
     @Valid
     List<WorkingExp> workingExps;
     @Valid

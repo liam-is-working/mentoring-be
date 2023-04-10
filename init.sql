@@ -16,9 +16,10 @@ create table user_profiles
     full_name    varchar(255),
     description text,
     dob         varchar(255),
-    gender      varchar(255),
+    gender      varchar(6),
     avatar_url   varchar(255),
-    cover_url    varchar(255)
+    cover_url    varchar(255),
+    cv          json
 )
 
 drop table user_profiles
