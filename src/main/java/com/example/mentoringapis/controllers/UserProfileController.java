@@ -1,6 +1,7 @@
 package com.example.mentoringapis.controllers;
 
-import com.example.mentoringapis.models.upStreamModels.CvInformation;
+import com.example.mentoringapis.models.upStreamModels.CvInformationResponse;
+import com.example.mentoringapis.models.upStreamModels.CvInformationUpdateRequest;
 import com.example.mentoringapis.models.upStreamModels.UserProfileResponse;
 import com.example.mentoringapis.models.upStreamModels.UserProfileUpdateRequest;
 import com.example.mentoringapis.security.CustomUserDetails;
@@ -29,23 +30,15 @@ public class UserProfileController {
     }
 
     @RequestMapping(path = "/cv/current", method = RequestMethod.POST)
-    public CvInformation updateMyCv(Authentication authentication, @Valid @RequestBody CvInformation cv) throws JsonProcessingException {
+    public CvInformationResponse updateMyCv(Authentication authentication, @Valid @RequestBody CvInformationUpdateRequest cv) throws JsonProcessingException {
         var currentUser = (CustomUserDetails) authentication.getPrincipal();
-        var cvString = userProfileService.updateCv(cv, currentUser.getAccount().getId()).getCv();
-        return objectMapper.readValue(cvString, CvInformation.class);
+        return userProfileService.updateCv(cv, currentUser.getAccount().getId());
     }
 
     @RequestMapping(path = "/cv/current", method = RequestMethod.GET)
-    public CvInformation getCv(Authentication authentication){
+    public CvInformationResponse getCv(Authentication authentication){
         var currentUser = (CustomUserDetails) authentication.getPrincipal();
-        return Optional.ofNullable(userProfileService.findCvByUUID(currentUser.getAccount().getId()))
-                .map(cvString -> {
-                    try {
-                        return objectMapper.readValue(cvString, CvInformation.class);
-                    } catch (JsonProcessingException e) {
-                        return null;
-                    }
-                }).orElse(null);
+        return userProfileService.getCvResponseByUUID(currentUser.getAccount().getId());
     }
 
     @GetMapping(path = "/current")

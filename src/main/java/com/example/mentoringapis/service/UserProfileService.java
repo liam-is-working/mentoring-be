@@ -1,8 +1,8 @@
 package com.example.mentoringapis.service;
 
-import com.example.mentoringapis.entities.Cv;
 import com.example.mentoringapis.entities.UserProfile;
-import com.example.mentoringapis.models.upStreamModels.CvInformation;
+import com.example.mentoringapis.models.upStreamModels.CvInformationResponse;
+import com.example.mentoringapis.models.upStreamModels.CvInformationUpdateRequest;
 import com.example.mentoringapis.models.upStreamModels.UserProfileResponse;
 import com.example.mentoringapis.models.upStreamModels.UserProfileUpdateRequest;
 import com.example.mentoringapis.repositories.UserProfileRepository;
@@ -12,8 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
-import java.time.LocalDate;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -47,10 +45,22 @@ public class UserProfileService {
     public String findCvByUUID(UUID id){
         return userProfileRepository
                 .findUserProfileByAccount_Id(id)
-                .map(userProfile -> userProfile.getCv()).orElse(null);
+                .map(UserProfile::getCv).orElse(null);
     }
 
-    public UserProfile updateCv(CvInformation cv, UUID profileId){
+    public CvInformationResponse getCvResponseByUUID(UUID uuid){
+        var cvString = findCvByUUID(uuid);
+        try {
+            var cvResponse = objectMapper.readValue(cvString, CvInformationResponse.class);
+            cvResponse.setUserProfileId(uuid);
+            return cvResponse;
+        } catch (JsonProcessingException e) {
+            //TODO log
+            return null;
+        }
+    }
+
+    public CvInformationResponse updateCv(CvInformationUpdateRequest cv, UUID profileId){
         return userProfileRepository.findUserProfileByAccount_Id(profileId)
                 .map(profileToUpdate -> {
                     try {
@@ -60,6 +70,18 @@ public class UserProfileService {
                         e.printStackTrace();
                         return null;
                     }
-                }).orElse(null);
+                })
+                .map(UserProfile::getCv)
+                .map(cvString -> {
+                    try {
+                        var cvRes = objectMapper.readValue(cvString, CvInformationResponse.class);
+                        cvRes.setUserProfileId(profileId);
+                        return cvRes;
+                    } catch (JsonProcessingException e) {
+                        //TODO log
+                        return null;
+                    }
+                })
+                .orElse(null);
     }
 }

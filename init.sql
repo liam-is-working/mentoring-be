@@ -8,8 +8,6 @@ CREATE table accounts
     is_mentor        boolean
 );
 
-CREATE TYPE gender AS ENUM ('male', 'female', 'unknown');
-
 create table user_profiles
 (
     account_id   uuid PRIMARY KEY REFERENCES Accounts (id),

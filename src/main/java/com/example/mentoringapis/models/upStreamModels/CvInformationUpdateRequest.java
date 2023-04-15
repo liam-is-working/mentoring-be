@@ -5,26 +5,24 @@ import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
-public class CvInformation {
+public class CvInformationUpdateRequest {
 
     String description;
 
     @Valid
-    List<WorkingExp> workingExps;
+    WorkingExp[] workingExps;
     @Valid
-    List<LearningExp> learningExps;
+    LearningExp[] learningExps;
     @Valid
-    List<SocialActivity> socialActivities;
+    SocialActivity[] socialActivities;
     @Valid
-    List<Achievement> achievements;
+    Achievement[] achievements;
     @Valid
-    List<Certificate> certificates;
+    Certificate[] certificates;
     @Valid
-    List<Skill> skills;
+    Skill[] skills;
 
     @Getter
     @Setter
@@ -37,6 +35,7 @@ public class CvInformation {
         @CheckStringDate
         String endDate;
         String description;
+
     }
 
     @Getter
