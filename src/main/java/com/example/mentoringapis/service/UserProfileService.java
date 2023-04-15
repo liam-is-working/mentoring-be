@@ -45,7 +45,7 @@ public class UserProfileService {
     public String findCvByUUID(UUID id){
         return userProfileRepository
                 .findUserProfileByAccount_Id(id)
-                .map(UserProfile::getCv).orElse(null);
+                .map(UserProfile::getCv).orElse("");
     }
 
     public CvInformationResponse getCvResponseByUUID(UUID uuid){

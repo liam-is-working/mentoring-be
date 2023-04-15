@@ -191,7 +191,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserProfileCv'
+              $ref: '#/components/schemas/UpdateUserProfileCv'
       responses:
         200:
           description: update user profile successfully
@@ -330,6 +330,185 @@ components:
         {
           "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat",
           "workingExps": [
+            {
+              "index": "0",
+              "position": "string",
+              "company": "string",
+              "startDate": "2020-02-13",
+              "endDate": "2020-02-13",
+              "description": "string",
+              "workingHere": false
+            },
+            {
+              "index": "1",
+              "position": "string",
+              "company": "string",
+              "startDate": "2020-02-13",
+              "endDate": "2020-02-13",
+              "description": "string",
+              "workingHere": false
+            }
+          ],
+          "learningExps": [
+            {
+              "index": "0",
+              "school": "string",
+              "major": "string",
+              "startDate": "2020-02-13",
+              "endDate": "2020-02-13",
+              "description": "string"
+            }
+          ],
+          "socialActivities": [
+            {
+              "index": "0",
+              "organization": "string",
+              "position": "string",
+              "startDate": "2020-02-13",
+              "endDate": "2020-02-13",
+              "description": "string",
+              "attendingThis": false
+            }
+          ],
+          "achievements": [
+            {
+              "index": "0",
+              "name": "string",
+              "organization": "string",
+              "achievingDate": "2020-02-13",
+              "description": "string"
+            }
+          ],
+          "certificates": [
+            {
+              "index": "0",
+              "name": "string",
+              "organization": "string",
+              "achievingDate": "2020-02-13",
+              "expiryDate": "2020-02-13",
+              "description": "string"
+            }
+          ],
+          "skills": [
+            {
+              "index": "0",
+              "name": "string",
+              "description": "string"
+            }
+          ]
+        }
+      properties:
+        description:
+          type: string
+          example: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat
+        workinExps:
+          type: array
+          properties:
+            index:
+              type: string
+            position:
+              type: string
+            company:
+              type: string
+            isWorkingHere:
+              type: boolean
+            startDate:
+              type: string
+              format: yyyy-MM-dd
+            endDate:
+              type: string
+              format: yyyy-MM-dd
+            description:
+              type: string
+        learningExps:
+          type: array
+          properties:
+            index:
+              type: string
+            school:
+              type: string
+            major:
+              type: string
+            startDate:
+              type: string
+              format: yyyy-MM-dd
+            endDate:
+              type: string
+              format: yyyy-MM-dd
+            description:
+              type: string
+        socialActivities:
+          type: array
+          properties:
+            index:
+              type: string
+            organization:
+              type: string
+            position:
+              type: string
+            isAttendingThis:
+              type: string
+            startDate:
+              type: string
+              format: yyyy-MM-dd
+            endDate:
+              type: string
+              format: yyyy-MM-dd
+            description:
+              type: string
+        achievements:
+          type: array
+          properties:
+            index:
+              type: string
+            name:
+              type: string
+            organization:
+              type: string
+            achievingDate:
+              type: string
+              format: yyyy-MM-dd
+            description:
+              type: string
+        certificates:
+          type: array
+          properties:
+            index:
+              type: string
+            name:
+              type: string
+            organization:
+              type: string
+            achievingDate:
+              type: string
+              format: yyyy-MM-dd
+            expiryDate:
+              type: string
+              format: yyyy-MM-dd
+            description:
+              type: string
+        skills:
+          type: array
+          properties:
+            index:
+              type: string
+            name:
+              type: string
+            description:
+              type: string
+    UpdateUserProfileCv:
+      example:
+        {
+          "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat",
+          "workingExps": [
+            {
+              "position": "string",
+              "company": "string",
+              "startDate": "2020-02-13",
+              "endDate": "2020-02-13",
+              "description": "string",
+              "workingHere": false
+            },
             {
               "position": "string",
               "company": "string",
