@@ -20,6 +20,7 @@ public class SignInRes {
     String fullName;
     String dob;
     String avatarUrl;
+    boolean isAuthenticated;
 
     public static SignInRes buildFromAccount(Account account, JwtTokenProvider jwtTokenProvider){
         var userProfile = account.getUserProfile();
@@ -31,8 +32,9 @@ public class SignInRes {
                 .email(account.getEmail())
                 .sex(Optional.ofNullable(userProfile.getGender()).map(Enum::name).orElse(Gender.others.name()))
                 .isLocked(false)
-                .role(account.isMentor() ? "MENTOR" : "MENTEE")
+                .role(account.getRole())
                 .fullName(userProfile.getFullName())
+                .isAuthenticated(account.isAuthenticated())
                 .build();
     }
 }

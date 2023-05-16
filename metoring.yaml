@@ -52,6 +52,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SignInResponseBody'
+        404:
+          description: email does not authenticated with GG, hence it also doenst exist in firebase Auth
+        403:
+          description: email is not in FPT email group and has not been created as an Mentor or Staff
         400:
           description: validation fail
           content:
@@ -227,6 +231,99 @@ paths:
                 $ref: '#/components/schemas/UserProfileCv'
         403:
           description: unathorized access, current access-token is not valid
+  /accounts/staffs:
+    post:
+      tags:
+        - Accounts
+      summary: Create a staff account with email
+      operationId: create staff account
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStaffAccountRequest'
+      responses:
+        200:
+          description: create a staff successfully
+        409:
+          description: email is an FPT student email or email already exists
+        400:
+          description: validation fail
+          content:
+            appication/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrors'
+        403:
+          description: unathorized access
+    get:
+      tags:
+        - Accounts
+      summary: get all staff accounts
+      operationId: getStaffAccounts
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: false
+      responses:
+        200:
+          description: get all staff accounts
+        403:
+          description: unathorized access, current access-token is not valid
+  /accounts/mentors:
+    post:
+      tags:
+        - Accounts
+      summary: Create a mentor account with email
+      operationId: create mentor account
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMentorAccountRequest'
+      responses:
+        200:
+          description: create a mentor account successfully
+        409:
+          description: email is an FPT student email or email already exists
+        400:
+          description: validation fail
+          content:
+            appication/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrors'
+        403:
+          description: unathorized access
+    get:
+      tags:
+        - Accounts
+      summary: get all mentors accounts
+      operationId: getMentorAccounts
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: false
+      responses:
+        200:
+          description: get all mentor accounts
+        403:
+          description: unathorized access, current access-token is not valid
+
 
 components:
   schemas:
@@ -272,7 +369,7 @@ components:
         role:
           type: string
           enum:
-            [ mentor, mentee, mentor-mentee ]
+            [ MENTOR, MENTEE, STAFF ]
         isLocked:
           type: boolean
         fullName:
@@ -305,7 +402,33 @@ components:
             avatarUrl:
               type: string
               description: avatar url fetched from Google account
-          required: [idToken,email,fullName,localId]
+          required: [idToken,email,localId]
+    CreateStaffAccountRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: abc@gmail.com
+        fullName:
+          type: string
+          description: full name fetched from Google account
+        avatarUrl:
+          type: string
+          description: avatar url fetched from Google account
+      required: [ email ]
+    CreateMentorAccountRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: abc@gmail.com
+        fullName:
+          type: string
+          description: full name fetched from Google account
+        avatarUrl:
+          type: string
+          description: avatar url fetched from Google account
+      required: [ email ]
     UserProfile:
       properties:
         email:

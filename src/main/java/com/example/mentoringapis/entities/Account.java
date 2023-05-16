@@ -1,5 +1,6 @@
 package com.example.mentoringapis.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,10 +14,20 @@ import java.util.UUID;
 @Table(name = "Accounts")
 @NoArgsConstructor
 public class Account {
-    public Account(String email, String firebaseUuid, boolean isMentor) {
+    public static enum Role{
+        MENTOR, STAFF, STUDENT
+    }
+    public Account(String email, String firebaseUuid, Role role) {
         this.email = email;
         this.firebaseUuid = firebaseUuid;
-        this.isMentor = isMentor;
+        this.role = role.name();
+    }
+
+    public Account(String email, String firebaseUuid, Role role, boolean isAuthenticated) {
+        this.email = email;
+        this.firebaseUuid = firebaseUuid;
+        this.role = role.name();
+        this.isAuthenticated = isAuthenticated;
     }
 
     @Id
@@ -25,8 +36,10 @@ public class Account {
 
     private String email;
     private String firebaseUuid;
-    private boolean isMentor;
+    private String role;
+    private boolean isAuthenticated;
 
+    @JsonIgnore
     @OneToOne(mappedBy = "account", cascade = CascadeType.ALL )
     @PrimaryKeyJoinColumn
     private UserProfile userProfile;

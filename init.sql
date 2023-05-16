@@ -2,8 +2,9 @@ CREATE table accounts
 (
     id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     email           varchar(50) UNIQUE NOT NULL,
-    firebase_uuid    varchar(50) UNIQUE NOT NULL,
-    is_mentor        boolean
+    firebase_uuid    varchar(50) UNIQUE,
+    role            varchar(8) NOT NULL,
+    is_authenticated boolean DEFAULT false
 );
 
 create table user_profiles

@@ -1,6 +1,7 @@
 package com.example.mentoringapis.errors;
 
 import com.example.mentoringapis.models.downStreamModels.FirebaseBaseResponse;
+import com.google.firebase.auth.FirebaseAuthException;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -48,5 +49,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleServletRequestBindingException(ServletRequestBindingException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         return new ResponseEntity<>(ex.getBody(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MentoringAuthenticationError.class)
+    public ResponseEntity<Object> handleMentoringAuthenticationException(MentoringAuthenticationError ex) {
+        return new ResponseEntity<>(ex.getErrorMessages(), ex.getHttpStatus());
+    }
+
+    @ExceptionHandler(FirebaseError.class)
+    public ResponseEntity<Object> handleFirebaseException(FirebaseError ex) {
+        return new ResponseEntity<>(ex.getErrorMessages(), HttpStatusCode.valueOf(ex.getCode()));
+    }
+
+    @ExceptionHandler(FirebaseAuthException.class)
+    public ResponseEntity<Object> handleFirebaseAuthException(FirebaseAuthException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
     }
 }

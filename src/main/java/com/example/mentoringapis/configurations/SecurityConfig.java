@@ -23,13 +23,14 @@ public class SecurityConfig{
         http
                 .cors()
                 .and()
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/sign-in/**").permitAll()
-                        .requestMatchers("/error").permitAll()
-                        .requestMatchers("/sign-up/**").permitAll()
-                        .requestMatchers("/sign-up/email-verification").permitAll()
-                        .anyRequest().authenticated()
-                )
+//                .authorizeHttpRequests(authorize -> authorize
+//                        .requestMatchers("/sign-in/**").permitAll()
+//                        .requestMatchers("/error").permitAll()
+//                        .requestMatchers("/sign-up/**").permitAll()
+//                        .requestMatchers("/sign-up/email-verification").permitAll()
+//                        .anyRequest().authenticated()
+//                )
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
                 .csrf().disable()
                 .addFilterBefore(jwtAuthenticationFilter(), LogoutFilter.class);
         return http.build();
