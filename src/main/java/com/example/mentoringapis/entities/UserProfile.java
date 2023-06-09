@@ -11,6 +11,8 @@ import org.hibernate.type.SqlTypes;
 
 import java.sql.Date;
 import java.sql.SQLType;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -30,6 +32,7 @@ public class UserProfile {
     @Enumerated(EnumType.STRING)
     private Gender gender;
     private String avatarUrl;
+    private String phoneNum;
     private String coverUrl;
     @JdbcTypeCode(SqlTypes.JSON)
     private String cv;
@@ -39,4 +42,15 @@ public class UserProfile {
     @JoinColumn(name = "account_id")
     @JsonIgnore
     private Account account;
+
+    @ManyToMany(mappedBy = "mentors")
+    private Set<Seminar> seminars = new HashSet<>();
+
+    public Account getAccount() {
+        return account;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
+    }
 }

@@ -1,13 +1,17 @@
 package com.example.mentoringapis.security;
 
 import com.example.mentoringapis.entities.Account;
+import com.example.mentoringapis.entities.Department;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 @AllArgsConstructor
 @Data
@@ -15,7 +19,12 @@ public class CustomUserDetails implements UserDetails {
     Account account;
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return null;
+        return List.of(new SimpleGrantedAuthority(account.getRole()));
+    }
+    public Integer getDepartmentId(){
+        return Optional.ofNullable(account.getDepartment())
+                .map(Department::getId)
+                .orElse(null);
     }
 
     @Override
@@ -46,5 +55,9 @@ public class CustomUserDetails implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    public String getRole(){
+        return account.getRole();
     }
 }

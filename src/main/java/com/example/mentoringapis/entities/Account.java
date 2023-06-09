@@ -5,7 +5,11 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.ZonedDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -14,8 +18,11 @@ import java.util.UUID;
 @Table(name = "Accounts")
 @NoArgsConstructor
 public class Account {
-    public static enum Role{
+    public enum Role{
         MENTOR, STAFF, STUDENT
+    }
+    public enum Status{
+        NOT_DEFINE, ACTIVATED, WAITING, INVALIDATE
     }
     public Account(String email, String firebaseUuid, Role role) {
         this.email = email;
@@ -37,10 +44,28 @@ public class Account {
     private String email;
     private String firebaseUuid;
     private String role;
+    private String status;
+    @Temporal(TemporalType.TIMESTAMP)
+    @CreationTimestamp
+    private ZonedDateTime createdDate;
     private boolean isAuthenticated;
 
     @JsonIgnore
-    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL )
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "account")
     @PrimaryKeyJoinColumn
     private UserProfile userProfile;
+
+    public UserProfile getUserProfile() {
+        return userProfile;
+    }
+
+    public void setUserProfile(UserProfile userProfile) {
+        this.userProfile = userProfile;
+    }
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
+    private Department department;
+
+
 }

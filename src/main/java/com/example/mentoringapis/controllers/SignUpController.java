@@ -35,17 +35,4 @@ public class SignUpController {
     public Mono<ResponseEntity<String>> signUpWithEmailPassword(@Valid @RequestBody SignUpWithEmailPasswordRequest reqBod) throws FirebaseAuthException, FirebaseError {
         return authService.signUpWithEmailAndPassword(reqBod.getEmail(), reqBod.getPassword(), reqBod.getFullName()).map(ResponseEntity::ok);
     }
-
-    @RequestMapping(value = "/email-verification", method = RequestMethod.GET)
-    public Mono<ResponseEntity<String>> emailVerify(@RequestParam String oobCode){
-        return authService.finishSigningUpWithEmailVerification(oobCode)
-                .map(acc -> ResponseEntity.ok(acc.getEmail()));
-//        try {
-//            var result  = firebaseAuthService.finishSigningUpWithEmailVerification(oobCode);
-//            return ResponseEntity.ok(result);
-//        }catch (Exc error){
-//            return new ResponseEntity<>(error.getErrorMessages(), HttpStatusCode.valueOf(error.getCode()));
-//        }
-//                .doOnError(FirebaseError.class)
-    }
 }

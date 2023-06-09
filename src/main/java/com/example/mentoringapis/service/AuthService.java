@@ -1,21 +1,21 @@
 package com.example.mentoringapis.service;
 
 import com.example.mentoringapis.entities.Account;
+import com.example.mentoringapis.entities.Department;
 import com.example.mentoringapis.entities.Gender;
 import com.example.mentoringapis.entities.UserProfile;
+import com.example.mentoringapis.errors.ClientBadRequestError;
 import com.example.mentoringapis.errors.FirebaseError;
 import com.example.mentoringapis.errors.MentoringAuthenticationError;
 import com.example.mentoringapis.models.downStreamModels.FirebaseBaseResponse;
 import com.example.mentoringapis.models.downStreamModels.FirebaseErrorResponse;
-import com.example.mentoringapis.models.upStreamModels.CreateMentorAccountRequest;
-import com.example.mentoringapis.models.upStreamModels.CreateStaffAccountRequest;
-import com.example.mentoringapis.models.upStreamModels.SignInRes;
-import com.example.mentoringapis.models.upStreamModels.SignInWithGoogleRequest;
+import com.example.mentoringapis.models.upStreamModels.*;
 import com.example.mentoringapis.repositories.AccountsRepository;
+import com.example.mentoringapis.repositories.DepartmentRepository;
 import com.example.mentoringapis.repositories.FirebaseAuthRepository;
 import com.example.mentoringapis.security.CustomUserDetails;
 import com.example.mentoringapis.security.JwtTokenProvider;
-import com.example.mentoringapis.validation.ValidatorUtils;
+import com.example.mentoringapis.utilities.ValidatorUtils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 public class AuthService {
     private final FirebaseAuthRepository firebaseAuthRepo;
     private final AccountsRepository accountsRepository;
+    private final DepartmentRepository departmentRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final FirebaseAuth firebaseAuth;
 
@@ -87,31 +89,6 @@ public class AuthService {
                         stringSynchronousSink.next(passwordChangeRes.getEmail());
                     }
                 });
-    }
-
-    public Mono<Account> finishSigningUpWithEmailVerification(String oob) {
-        return firebaseAuthRepo.verifyEmail(oob)
-                .handle(((emailVerificationResponse, synchronousSink) -> {
-                    if (emailVerificationResponse.getError() != null) {
-                        synchronousSink.error(handleError(emailVerificationResponse));
-                    } else {
-                        //create new account and user profile of the account
-                        try {
-                            var userRecord = getUserRecord(emailVerificationResponse.getEmail());
-                            var newAccount = createNewAccountAndProfile(emailVerificationResponse.getEmail(),
-                                    emailVerificationResponse.getLocalId(), userRecord.getDisplayName(), userRecord.getPhotoUrl(), Account.Role.STUDENT, true);
-
-                            synchronousSink.next(newAccount);
-                        } catch (Exception ex) {
-                            try {
-                                firebaseAuth.deleteUser(emailVerificationResponse.getLocalId());
-                            } catch (FirebaseAuthException e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                    }
-                }));
     }
 
     public Mono<SignInRes> signInWithEmailAndPassword(String email, String password) {
@@ -204,6 +181,7 @@ public class AuthService {
                 .map(account -> {
                     if (!isFptStudentEmail && !account.isAuthenticated()) {
                         account.setAuthenticated(true);
+                        account.setStatus(Account.Status.ACTIVATED.name());
                         accountsRepository.save(account);
                     }
                     return SignInRes.buildFromAccount(account, jwtTokenProvider);
@@ -211,26 +189,35 @@ public class AuthService {
                 .orElseGet(() -> {
                     //create new STUDENT account in db
                     var newAccount = createNewAccountAndProfile(request.getEmail(), request.getLocalId()
-                            , request.getFullName(), request.getAvatarUrl(), Account.Role.STUDENT, true);
+                            , request.getFullName(), request.getAvatarUrl(), Account.Role.STUDENT,
+                            true, null, null);
                     return SignInRes.buildFromAccount(newAccount, jwtTokenProvider);
                 });
     }
 
     private Account createNewAccountAndProfile(String email, String firebaseId,
-                                               String fullName, String avatarUrl, Account.Role role, boolean isAuthenticated) {
+                                               String fullName, String avatarUrl, Account.Role role, boolean isAuthenticated, Department department, String phoneNum) {
         var newAccount = new Account(email,
                 firebaseId, role, isAuthenticated);
+        if(Account.Role.MENTOR.equals(role)){
+            newAccount.setStatus(Account.Status.WAITING.name());
+        }
+
         var newProfile = new UserProfile();
         newProfile.setGender(Gender.others);
         newProfile.setFullName(fullName);
         newAccount.setUserProfile(newProfile);
         newProfile.setAccount(newAccount);
         newProfile.setAvatarUrl(avatarUrl);
+        newProfile.setPhoneNum(phoneNum);
+
+        newAccount.setDepartment(department);
 
         return accountsRepository.save(newAccount);
     }
 
-    public String createMentorAccount(CreateMentorAccountRequest request) throws MentoringAuthenticationError {
+
+    public MentorAccountResponse createMentorAccount(CreateMentorAccountRequest request) throws MentoringAuthenticationError {
         if(ValidatorUtils.isFptStudentEMail(request.getEmail()))
             throw MentoringAuthenticationError.builder()
                     .httpStatus(HttpStatus.CONFLICT)
@@ -241,12 +228,13 @@ public class AuthService {
             .httpStatus(HttpStatus.CONFLICT)
             .errorMessages(String.format("Email: %s already exists", request.getEmail()))
             .build();
-        var newMentorAccount = createNewAccountAndProfile(request.getEmail(), null
-                , request.getFullName(), request.getAvatarUrl(), Account.Role.MENTOR, false);
-        return newMentorAccount.getEmail();
+        var newMentorAccount = createNewAccountAndProfile(request.getEmail(), null,
+                request.getFullName(), request.getAvatarUrl(), Account.Role.MENTOR,
+                false, null, request.getPhoneNumber());
+        return MentorAccountResponse.fromAccountEntity(newMentorAccount);
     }
 
-    public String createStaffAccount(CreateStaffAccountRequest request) throws MentoringAuthenticationError {
+    public String createStaffAccount(CreateStaffAccountRequest request) throws MentoringAuthenticationError, ClientBadRequestError {
         if(ValidatorUtils.isFptStudentEMail(request.getEmail()))
             throw MentoringAuthenticationError.builder()
                     .httpStatus(HttpStatus.BAD_REQUEST)
@@ -257,8 +245,15 @@ public class AuthService {
                     .httpStatus(HttpStatus.CONFLICT)
                     .errorMessages(String.format("Email: %s already exists", request.getEmail()))
                     .build();
+        var department = Optional.ofNullable(request.getDepartmentId())
+                .flatMap(departmentRepository::findById)
+                .orElse(null);
+        if(department == null)
+            throw ClientBadRequestError.builder()
+                    .errorMessages(String.format("Cannot find department with id: %s", request.getDepartmentId()))
+                    .build();
         var newStaffAccount = createNewAccountAndProfile(request.getEmail(), null
-                , request.getFullName(), request.getAvatarUrl(), Account.Role.STAFF, false);
+                , request.getFullName(), request.getAvatarUrl(), Account.Role.STAFF, false, department, null);
         return newStaffAccount.getEmail();
     }
 

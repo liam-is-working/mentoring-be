@@ -18,6 +18,7 @@ public class UserProfileResponse {
     private String gender;
     private String avatarUrl;
     private String coverUrl;
+    private String role;
 
 
 

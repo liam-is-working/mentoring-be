@@ -1,6 +1,7 @@
 package com.example.mentoringapis.models.upStreamModels;
 
 import com.example.mentoringapis.entities.Account;
+import com.example.mentoringapis.entities.Department;
 import com.example.mentoringapis.entities.Gender;
 import com.example.mentoringapis.security.JwtTokenProvider;
 import lombok.Builder;
@@ -20,6 +21,7 @@ public class SignInRes {
     String fullName;
     String dob;
     String avatarUrl;
+    Integer departmentId;
     boolean isAuthenticated;
 
     public static SignInRes buildFromAccount(Account account, JwtTokenProvider jwtTokenProvider){
@@ -32,6 +34,7 @@ public class SignInRes {
                 .email(account.getEmail())
                 .sex(Optional.ofNullable(userProfile.getGender()).map(Enum::name).orElse(Gender.others.name()))
                 .isLocked(false)
+                .departmentId(Optional.ofNullable(account.getDepartment()).map(Department::getId).orElse(null))
                 .role(account.getRole())
                 .fullName(userProfile.getFullName())
                 .isAuthenticated(account.isAuthenticated())

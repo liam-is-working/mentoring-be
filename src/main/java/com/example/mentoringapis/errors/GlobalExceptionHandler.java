@@ -65,4 +65,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Object> handleFirebaseAuthException(FirebaseAuthException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
     }
+
+    @ExceptionHandler(ClientBadRequestError.class)
+    public ResponseEntity<Object> handleClientBadRequestError(ClientBadRequestError ex) {
+        return new ResponseEntity<>(ex.getErrorMessages(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Object> handleResourceNotFoundError(ResourceNotFoundException ex) {
+        return new ResponseEntity<>(ex.getErrorMessages(), HttpStatus.NOT_FOUND);
+    }
+
+
 }

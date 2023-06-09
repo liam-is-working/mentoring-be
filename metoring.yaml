@@ -323,6 +323,14 @@ paths:
           description: get all mentor accounts
         403:
           description: unathorized access, current access-token is not valid
+#  /seminars:
+#    get:
+#      tags:
+#        - Seminars
+#      responses:
+#
+#
+
 
 
 components:

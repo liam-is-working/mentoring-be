@@ -12,4 +12,6 @@ import java.util.UUID;
 public interface AccountsRepository extends CrudRepository<Account, UUID> {
     Optional<Account> findByEmail(String email);
     List<Account> findAccountsByRole(String role);
+    List<Account> findAllById(Iterable<UUID> uuids);
+    Optional<Account> findAccountsByIdAndRole(UUID id, String role);
 }

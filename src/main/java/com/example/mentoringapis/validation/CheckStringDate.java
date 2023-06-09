@@ -17,7 +17,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Constraint(validatedBy = CheckStringDateValidator.class)
 @Documented
 public @interface CheckStringDate {
-    String message() default "String can't be parsed to DateTime object, please check format";
+    String message() default "String should be in correct date or datetime format";
 
     Class<?>[] groups() default { };
 

@@ -1,8 +1,6 @@
 package com.example.mentoringapis.unit;
 
-import com.example.mentoringapis.service.AuthService;
-import com.example.mentoringapis.validation.ValidatorUtils;
-import org.junit.jupiter.api.Test;
+import com.example.mentoringapis.utilities.ValidatorUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 

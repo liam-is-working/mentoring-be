@@ -1,4 +1,4 @@
-package com.example.mentoringapis.validation;
+package com.example.mentoringapis.utilities;
 
 import java.util.List;
 import java.util.Locale;

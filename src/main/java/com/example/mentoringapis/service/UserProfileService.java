@@ -1,10 +1,8 @@
 package com.example.mentoringapis.service;
 
 import com.example.mentoringapis.entities.UserProfile;
-import com.example.mentoringapis.models.upStreamModels.CvInformationResponse;
-import com.example.mentoringapis.models.upStreamModels.CvInformationUpdateRequest;
-import com.example.mentoringapis.models.upStreamModels.UserProfileResponse;
-import com.example.mentoringapis.models.upStreamModels.UserProfileUpdateRequest;
+import com.example.mentoringapis.errors.ResourceNotFoundException;
+import com.example.mentoringapis.models.upStreamModels.*;
 import com.example.mentoringapis.repositories.UserProfileRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -19,6 +18,20 @@ import java.util.UUID;
 public class UserProfileService {
     private final UserProfileRepository userProfileRepository;
     private final ObjectMapper objectMapper;
+
+    public MentorAccountResponse update(UpdateMentorProfileRequest request, UUID mentorId) throws ResourceNotFoundException {
+        var mentorToUpdate = userProfileRepository.findUserProfileByAccount_Id(mentorId);
+        return mentorToUpdate.map(
+                profile -> {
+                    var account = profile.getAccount();
+                    Optional.ofNullable(request.getPhoneNum()).ifPresent(profile::setPhoneNum);
+                    Optional.ofNullable(request.getFullName()).ifPresent(profile::setFullName);
+                    Optional.ofNullable(request.getStatus()).ifPresent(account::setStatus);
+                    userProfileRepository.save(profile);
+                    return MentorAccountResponse.fromAccountEntity(account);
+                }
+        ).orElseThrow(() -> new ResourceNotFoundException(String.format("Cannot find mentor with id: %s", mentorId)));
+    }
 
     public UserProfileResponse update(UserProfileUpdateRequest request, UUID profileId){
         return userProfileRepository.findUserProfileByAccount_Id(profileId)
