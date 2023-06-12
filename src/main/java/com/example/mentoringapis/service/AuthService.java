@@ -29,6 +29,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static java.util.Optional.ofNullable;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -37,6 +39,8 @@ public class AuthService {
     private final DepartmentRepository departmentRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final FirebaseAuth firebaseAuth;
+    private final FireStoreService fireStoreService;
+    private final StaticResourceService staticResourceService;
 
     private FirebaseError handleError(FirebaseBaseResponse response) {
         return FirebaseError.builder()
@@ -213,7 +217,11 @@ public class AuthService {
 
         newAccount.setDepartment(department);
 
-        return accountsRepository.save(newAccount);
+        var createdAccount = accountsRepository.save(newAccount);
+
+        fireStoreService.updateUserProfile(fullName, avatarUrl, role.name(), email, createdAccount.getId());
+
+        return createdAccount;
     }
 
 
@@ -245,7 +253,7 @@ public class AuthService {
                     .httpStatus(HttpStatus.CONFLICT)
                     .errorMessages(String.format("Email: %s already exists", request.getEmail()))
                     .build();
-        var department = Optional.ofNullable(request.getDepartmentId())
+        var department = ofNullable(request.getDepartmentId())
                 .flatMap(departmentRepository::findById)
                 .orElse(null);
         if(department == null)

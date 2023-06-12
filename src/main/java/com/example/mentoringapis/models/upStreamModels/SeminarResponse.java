@@ -33,7 +33,7 @@ public class SeminarResponse {
     private Set<MentorAccountResponse> mentors;
     private DepartmentRes department;
     private String status;
-    private Set<String> attachmentLinks;
+    private String[] attachmentLinks;
     private String[] attachmentUrls;
 
     enum Status{
@@ -79,21 +79,11 @@ public class SeminarResponse {
 //    }
 
     public static SeminarResponse fromSeminarEntity(Seminar seminarEntity, StaticResourceService staticResourceService) {
-        var imageLink = Optional
-                .ofNullable(seminarEntity.getImageUrl())
-                .map(staticResourceService::generateResourceUrl)
-                .orElse(null);
-        var attachmentUrls = Optional.ofNullable(seminarEntity.getAttachmentUrl()).filter(s -> s.contains(";")).map(s -> s.split(";")).orElse(null);
-        var attachmentLink = Optional.ofNullable(attachmentUrls).map(urls -> Arrays.stream(urls)
-                .map(staticResourceService::generateResourceUrl)
-                .filter(Objects::nonNull)
-                .map(URL::toString)
-                .collect(Collectors.toSet()))
-                .orElse(null);
+        var attachmentUrls = Optional.ofNullable(seminarEntity.getAttachmentUrl()).filter(s -> !s.isBlank()).map(s -> s.split(";")).orElse(null);
         return SeminarResponse.builder()
                 .id(seminarEntity.getId())
-                .imageLink(Optional.ofNullable(imageLink).map(URL::toString).orElse(Strings.EMPTY))
-                .attachmentLinks(Optional.ofNullable(attachmentLink).orElse(null))
+                .imageLink(seminarEntity.getImageUrl())
+                .attachmentLinks(attachmentUrls)
                 .description(seminarEntity.getDescription())
                 .imageUrl(seminarEntity.getImageUrl())
                 .attachmentUrls(attachmentUrls)
@@ -101,7 +91,7 @@ public class SeminarResponse {
                 .location(seminarEntity.getLocation())
                 .startTime(seminarEntity.getStartTime().format(DEFAULT_DATE_TIME_FORMATTER))
                 .status(getStatus(seminarEntity.getStartTime()).name())
-                .mentors(seminarEntity.getMentors().stream().map(UserProfile::getAccount).map(MentorAccountResponse::fromAccountEntity).collect(Collectors.toSet()))
+                .mentors(seminarEntity.getMentors().stream().map(UserProfile::getAccount).map(acc -> MentorAccountResponse.fromAccountEntity(acc, staticResourceService)).collect(Collectors.toSet()))
                 .department(Optional.ofNullable(seminarEntity.getDepartment()).map(DepartmentRes::fromDepartmentEntity).orElse(null))
                 .build();
     }

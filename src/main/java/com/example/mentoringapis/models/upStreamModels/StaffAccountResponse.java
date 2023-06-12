@@ -42,7 +42,7 @@ public class StaffAccountResponse {
                 .isAuthenticated(account.isAuthenticated())
                 .role(account.getRole())
                 .department(Optional.ofNullable(account.getDepartment()).map(DepartmentRes::fromDepartment).orElse(null))
-                .profile(Optional.ofNullable(account.getUserProfile()).map(UserProfileResponse::fromUserProfile).orElse(null))
+                .profile(Optional.ofNullable(account.getUserProfile()).map(prof -> UserProfileResponse.fromUserProfile(prof, null)).orElse(null))
                 .build();
     }
 }

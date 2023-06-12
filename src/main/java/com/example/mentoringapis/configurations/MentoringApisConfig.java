@@ -19,31 +19,8 @@ import java.io.IOException;
 @SpringBootConfiguration
 public class MentoringApisConfig {
     @Bean
-    FirebaseApp firebaseApp() throws IOException {
-        var serviceAccount =
-                new ClassPathResource("secret/study-with-mentors-firebase-adminsdk-uss11-7a0f31fcca.json").getInputStream();
-
-         FirebaseOptions options = FirebaseOptions.builder()
-                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                 .setStorageBucket("study-with-mentors.appspot.com")
-                 .build();
-
-        return FirebaseApp.initializeApp(options);
-    }
-
-    @Bean
-    FirebaseAuth firebaseAuth() throws IOException {
-        return FirebaseAuth.getInstance(firebaseApp());
-    }
-
-    @Bean
     WebClient webClient(){
         return WebClient.builder().build();
-    }
-
-    @Bean
-    Bucket firebaseStorage(){
-        return StorageClient.getInstance().bucket();
     }
 
     @Bean

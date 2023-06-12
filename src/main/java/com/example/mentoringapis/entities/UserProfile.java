@@ -37,7 +37,7 @@ public class UserProfile {
     @JdbcTypeCode(SqlTypes.JSON)
     private String cv;
 
-    @OneToOne(cascade = CascadeType.MERGE)
+    @OneToOne(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)
     @MapsId
     @JoinColumn(name = "account_id")
     @JsonIgnore

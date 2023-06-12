@@ -30,11 +30,11 @@ public class Seminar implements Comparable{
     private String attachmentUrl;
     private LocalDateTime startTime;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id")
     private Department department;
 
-    @ManyToMany(cascade = CascadeType.PERSIST)
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
     @JoinTable(
             name = "seminars_mentors",
             joinColumns = @JoinColumn(name = "seminar_id"),

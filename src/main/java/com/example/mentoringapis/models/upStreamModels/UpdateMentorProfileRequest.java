@@ -3,6 +3,8 @@ package com.example.mentoringapis.models.upStreamModels;
 import com.example.mentoringapis.validation.EnumField;
 import lombok.Data;
 
+import javax.annotation.Nullable;
+
 @Data
 public class UpdateMentorProfileRequest {
     private String fullName;

@@ -22,7 +22,7 @@ public class EnumFieldValidator implements ConstraintValidator<EnumField, String
     @Override
     public boolean isValid(String s, ConstraintValidatorContext constraintValidatorContext) {
         if(s == null)
-            return false;
+            return true;
         return Arrays.asList(availableValues).contains(s);
     }
 }

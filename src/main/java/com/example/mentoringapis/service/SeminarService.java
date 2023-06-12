@@ -134,6 +134,8 @@ public class SeminarService {
                     .build();
         }
         var seminarResult = seminarRepository.findAllById(idToReturn);
+
+
         var seminarResultMap = seminarResult.stream().collect(Collectors.toMap(
                 Seminar::getId,
                 seminar -> seminar

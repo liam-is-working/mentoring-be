@@ -4,6 +4,7 @@ import com.example.mentoringapis.errors.ClientBadRequestError;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Bucket;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import static com.example.mentoringapis.configurations.ConstantConfiguration.*;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class StaticResourceService {
     private final Bucket bucket;
@@ -29,13 +31,13 @@ public class StaticResourceService {
                     .build();
         }
         Blob b = bucket.create(blobName, file.getBytes(), file.getContentType());
-        return b.getName();
+        return b.getMediaLink();
     }
 
     public String uploadAttachment(MultipartFile file) throws IOException {
         var blobName = ATTACHMENTS_RESOURCE_PATH.concat(UUID.randomUUID().toString());
         Blob b = bucket.create(blobName, file.getBytes(), file.getContentType());
-        return b.getName();
+        return b.getSelfLink();
     }
 
     public String uploadJsonPayload(byte[] content) throws IOException {
@@ -44,11 +46,4 @@ public class StaticResourceService {
         return b.getName();
     }
 
-    public URL generateResourceUrl(String filename){
-        return Optional.ofNullable(filename)
-                .filter(Strings::isNotEmpty)
-                .map(bucket::get)
-                .map(blob -> blob.signUrl(10, TimeUnit.HOURS))
-                .orElse(null);
-    }
 }

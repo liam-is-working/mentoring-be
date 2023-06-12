@@ -17,6 +17,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserProfileService {
     private final UserProfileRepository userProfileRepository;
+    private final FireStoreService fireStoreService;
+    private final StaticResourceService staticResourceService;
     private final ObjectMapper objectMapper;
 
     public MentorAccountResponse update(UpdateMentorProfileRequest request, UUID mentorId) throws ResourceNotFoundException {
@@ -28,6 +30,9 @@ public class UserProfileService {
                     Optional.ofNullable(request.getFullName()).ifPresent(profile::setFullName);
                     Optional.ofNullable(request.getStatus()).ifPresent(account::setStatus);
                     userProfileRepository.save(profile);
+
+                    fireStoreService.updateUserProfile(request.getFullName(), null, account.getRole(), account.getEmail(),mentorId);
+
                     return MentorAccountResponse.fromAccountEntity(account);
                 }
         ).orElseThrow(() -> new ResourceNotFoundException(String.format("Cannot find mentor with id: %s", mentorId)));
@@ -44,14 +49,17 @@ public class UserProfileService {
                     if(request.getDob() != null){
                         prof.setDob(Date.valueOf(request.getDob()));
                     }
+
+                    fireStoreService.updateUserProfile(request.getFullName(), request.getAvatarUrl(),
+                            prof.getAccount().getRole(), prof.getAccount().getEmail(), profileId);
                     return userProfileRepository.save(prof);
-                }).map(UserProfileResponse::fromUserProfile).orElse(null);
+                }).map(prof -> UserProfileResponse.fromUserProfile(prof, staticResourceService)).orElse(null);
     }
 
     public UserProfileResponse findByUUID(UUID id){
         return userProfileRepository
                 .findUserProfileByAccount_Id(id)
-                .map(UserProfileResponse::fromUserProfile)
+                .map(prof -> UserProfileResponse.fromUserProfile(prof, staticResourceService))
                 .orElse(null);
     }
 

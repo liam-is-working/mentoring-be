@@ -30,7 +30,7 @@ public class UserProfileController {
         return result;
     }
 
-    @PostMapping(path = "/{mentorId}")
+    @PostMapping(path = "mentors/{mentorId}")
     public MentorAccountResponse updateMentorProfile(@Valid @RequestBody UpdateMentorProfileRequest request,
                                                      @PathVariable("mentorId") UUID mentorId) throws ResourceNotFoundException {
         return userProfileService.update(request, mentorId);
