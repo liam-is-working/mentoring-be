@@ -16,11 +16,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static com.example.mentoringapis.configurations.ConstantConfiguration.DEFAULT_SEMINAR_PAGE_SIZE;
+import static com.example.mentoringapis.utilities.DateTimeUtils.DEFAULT_DATE_TIME_FORMATTER;
 import static com.example.mentoringapis.utilities.DateTimeUtils.DEFAULT_DATE_TIME_PATTERN;
 
 @RestController
@@ -49,6 +51,8 @@ public class SeminarController {
             endDate = DateTimeUtils.nowInVietnam().format(DateTimeFormatter.ofPattern(DEFAULT_DATE_TIME_PATTERN));
         }else if( "future".equals(status)){
             startDate = DateTimeUtils.nowInVietnam().format(DateTimeFormatter.ofPattern(DEFAULT_DATE_TIME_PATTERN));
+        }else {
+            endDate = DateTimeUtils.parseRoundDate(endDate).plusDays(1).format(DEFAULT_DATE_TIME_FORMATTER);
         }
         return ResponseEntity.ok(seminarService.searchByDateAndName(startDate,endDate,searchString, departmentId,status, PageRequest.of(pageIndex,pageSize)));
     }
@@ -71,7 +75,7 @@ public class SeminarController {
 
 //    @Secured("STAFF") TODO:authorize
     @PostMapping
-    public ResponseEntity<SeminarResponse> create(@Valid @RequestBody CreateSeminarRequest request, Authentication authentication) throws ClientBadRequestError {
+    public ResponseEntity<SeminarResponse> create(@Valid @RequestBody CreateSeminarRequest request, Authentication authentication) throws ClientBadRequestError, IOException {
 //        var currentUser = (CustomUserDetails) authentication.getPrincipal();
 //        return ResponseEntity.ok(seminarService.create(request, currentUser.getDepartmentId()));
 
@@ -93,9 +97,5 @@ public class SeminarController {
         return ResponseEntity.ok(seminarService.deleteSeminar(seminarId));
     }
 
-//    @GetMapping()
-//    public ResponseEntity<Page<Seminar>> getALl(@RequestParam String d1, @RequestParam String d2){
-//        return ResponseEntity.ok(seminarService.searchByDate(d1,d2, null));
-//    }
 
 }

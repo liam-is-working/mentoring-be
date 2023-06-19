@@ -37,24 +37,9 @@ public class MentorAccountResponse {
                 .firebaseUuid(account.getFirebaseUuid())
                 .isAuthenticated(account.isAuthenticated())
                 .role(account.getRole())
-                .status(account.getStatus())
-                .phoneNum(account.getUserProfile().getPhoneNum())
-                .fullName(account.getUserProfile().getFullName())
-                .createdDate(createdDate.format(DateTimeFormatter.ofPattern(DateTimeUtils.DEFAULT_DATE_TIME_PATTERN)))
-                .build();
-    }
-
-    public static MentorAccountResponse fromAccountEntity(Account account, StaticResourceService staticResourceService){
-        var createdDate = account.getCreatedDate().withZoneSameInstant(VIET_NAM_ZONE).toLocalDateTime();
-        return MentorAccountResponse.builder()
-                .id(account.getId())
-                .email(account.getEmail())
-                .firebaseUuid(account.getFirebaseUuid())
-                .isAuthenticated(account.isAuthenticated())
-                .role(account.getRole())
-                .status(account.getStatus())
                 .avatarUrl(account.getUserProfile().getAvatarUrl())
                 .avatarLink(account.getUserProfile().getAvatarUrl())
+                .status(account.getStatus())
                 .phoneNum(account.getUserProfile().getPhoneNum())
                 .fullName(account.getUserProfile().getFullName())
                 .createdDate(createdDate.format(DateTimeFormatter.ofPattern(DateTimeUtils.DEFAULT_DATE_TIME_PATTERN)))

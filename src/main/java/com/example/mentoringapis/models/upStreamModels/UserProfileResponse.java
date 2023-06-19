@@ -31,6 +31,7 @@ public class UserProfileResponse {
     public static UserProfileResponse fromUserProfile(UserProfile userProfile, StaticResourceService staticResourceService){
         return UserProfileResponse.builder()
                 .description(userProfile.getDescription())
+                .accountId(userProfile.getAccountId().toString())
                 .avatarUrl(userProfile.getAvatarUrl())
                 .coverUrl(userProfile.getCoverUrl())
                 .role(userProfile.getAccount().getRole())

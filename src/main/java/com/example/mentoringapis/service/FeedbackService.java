@@ -53,7 +53,7 @@ public class FeedbackService {
         var othersQuestionId = ((Integer) JsonPath.read(template, "$.questions.length()")) -1;
         var improvementsQuestionId = othersQuestionId-1;
 
-        var newSeminarFeedbackRes = new SeminarFeedbackReportResponse();
+        var newSeminarFeedbackRes = new SeminarFeedbackReportResponse(seminarId);
 
         feedbackResults.stream()
                 .map(SeminarFeedback::getContent)
@@ -75,7 +75,7 @@ public class FeedbackService {
         var statisticMono = webClient.method(HttpMethod.GET)
                 .uri(url, seminarId)
                 .retrieve()
-                .bodyToMono(Object.class);
+                .bodyToMono(List.class);
 
 
         return statisticMono
@@ -83,13 +83,30 @@ public class FeedbackService {
             newSeminarFeedbackRes.setReportStatistic(statistic);
             return newSeminarFeedbackRes;
         })
-                .switchIfEmpty(Mono.just(new SeminarFeedbackReportResponse()));
+                .switchIfEmpty(Mono.just(newSeminarFeedbackRes));
     }
 
     public Object getFeedbackForm(Long seminarId) throws IOException, ResourceNotFoundException {
         var seminar = getSeminarById(seminarId);
         var sortedMentorNames = seminar.mentorNames().stream().sorted().collect(Collectors.toList());
         return templateService.render("form_1", Map.of("mentorNames", sortedMentorNames));
+    }
+
+    public void initiateFeedback(Seminar seminar) throws IOException {
+        var sortedMentorNames = seminar.mentorNames().stream().sorted().collect(Collectors.toList());
+        var feedback = templateService.render("initFeedback_1", Map.of("mentorNames", sortedMentorNames));
+
+        var feedbackResult = om.convertValue(feedback, SeminarFeedbackRequest.class);
+
+        var tempMap = Map.of(
+                "results", om.writeValueAsString(feedbackResult.getResults())
+        );
+
+        var content = om.writeValueAsString(tempMap);
+        var newFeedback = new SeminarFeedback();
+        newFeedback.setContent(content);
+        newFeedback.setSeminar(seminar);
+        seminarFeedbackRepository.save(newFeedback);
     }
 
     public void updateFeedback(Long seminarId, SeminarFeedbackRequest feedbackResult) throws ResourceNotFoundException, IOException, ClientBadRequestError {

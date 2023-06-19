@@ -18,4 +18,5 @@ public class UserProfileUpdateRequest {
     private Gender gender;
     private String avatarUrl;
     private String coverUrl;
+    private Boolean activateAccount = false;
 }

@@ -9,11 +9,14 @@ import lombok.Data;
 
 import java.sql.Date;
 import java.util.Optional;
+import java.util.UUID;
 
 @Data
 @Builder
 public class SignInRes {
     String email;
+    UUID accountId;
+    String status;
     String accessToken;
     String role;
     boolean isLocked;
@@ -29,6 +32,8 @@ public class SignInRes {
         var accessToken = jwtTokenProvider.generateToken(account.getId());
         return SignInRes.builder()
                 .accessToken(accessToken)
+                .accountId(account.getId())
+                .status(account.getStatus())
                 .avatarUrl(userProfile.getAvatarUrl())
                 .dob(String.valueOf(userProfile.getDob()))
                 .email(account.getEmail())

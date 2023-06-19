@@ -16,8 +16,10 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.example.mentoringapis.utilities.DateTimeUtils.DEFAULT_DATE_TIME_FORMATTER;
+import static java.util.Optional.ofNullable;
 
 @Getter
 @Setter
@@ -35,6 +37,7 @@ public class SeminarResponse {
     private String status;
     private String[] attachmentLinks;
     private String[] attachmentUrls;
+    private Map<String, String> attachments;
 
     enum Status{
         FUTURE, PAST
@@ -59,27 +62,17 @@ public class SeminarResponse {
                     .build();
         }
     }
-//
-//    @Data
-//    @Builder
-//    static class MentorRes {
-//        private UUID id;
-//        private String fullName;
-//        private String avatarUrl;
-//        private String email;
-//
-//        static MentorRes fromUserProfileEntity(UserProfile userProfile){
-//            return MentorRes.builder()
-//                    .id(userProfile.getAccountId())
-//                    .fullName(userProfile.getFullName())
-//                    .avatarUrl(userProfile.getAvatarUrl())
-//                    .email(userProfile.getAccount().getEmail())
-//                    .build();
-//        }
-//    }
 
     public static SeminarResponse fromSeminarEntity(Seminar seminarEntity, StaticResourceService staticResourceService) {
-        var attachmentUrls = Optional.ofNullable(seminarEntity.getAttachmentUrl()).filter(s -> !s.isBlank()).map(s -> s.split(";")).orElse(null);
+        var attachmentUrls = ofNullable(seminarEntity.getAttachmentUrl()).filter(s -> !s.isBlank()).map(s -> s.split(";")).orElse(null);
+        Map<String, String> attachmentMaps = null;
+        try {
+            attachmentMaps = ofNullable(attachmentUrls).map(urls -> Arrays.stream(urls).collect(Collectors.toMap(
+                    url -> url.substring(url.indexOf('*'), url.lastIndexOf('*')),
+                    url -> url
+            ))).orElse(null);
+        } catch (IndexOutOfBoundsException ignored){}
+
         return SeminarResponse.builder()
                 .id(seminarEntity.getId())
                 .imageLink(seminarEntity.getImageUrl())
@@ -87,12 +80,13 @@ public class SeminarResponse {
                 .description(seminarEntity.getDescription())
                 .imageUrl(seminarEntity.getImageUrl())
                 .attachmentUrls(attachmentUrls)
+                .attachments(attachmentMaps)
                 .name(seminarEntity.getName())
                 .location(seminarEntity.getLocation())
                 .startTime(seminarEntity.getStartTime().format(DEFAULT_DATE_TIME_FORMATTER))
                 .status(getStatus(seminarEntity.getStartTime()).name())
-                .mentors(seminarEntity.getMentors().stream().map(UserProfile::getAccount).map(acc -> MentorAccountResponse.fromAccountEntity(acc, staticResourceService)).collect(Collectors.toSet()))
-                .department(Optional.ofNullable(seminarEntity.getDepartment()).map(DepartmentRes::fromDepartmentEntity).orElse(null))
+                .mentors(seminarEntity.getMentors().stream().map(UserProfile::getAccount).map(MentorAccountResponse::fromAccountEntity).collect(Collectors.toSet()))
+                .department(ofNullable(seminarEntity.getDepartment()).map(DepartmentRes::fromDepartmentEntity).orElse(null))
                 .build();
     }
 

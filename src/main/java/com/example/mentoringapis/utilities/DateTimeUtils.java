@@ -10,6 +10,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 
 @Slf4j
 public class DateTimeUtils {
@@ -40,7 +41,8 @@ public class DateTimeUtils {
 
     public static LocalDateTime parseRoundDate(String date) {
         try {
-            date = date.concat(" 00:00:00");
+            if(!date.contains(":"))
+                date = date.concat(" 00:00:00");
             return LocalDateTime.parse(date, DEFAULT_DATE_TIME_FORMATTER);
         } catch (DateTimeParseException e) {
             log.error(e.getMessage());

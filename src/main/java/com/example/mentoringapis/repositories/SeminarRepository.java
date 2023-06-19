@@ -24,6 +24,12 @@ public interface SeminarRepository extends JpaRepository<Seminar, Long> {
 
     @Query(value = "select  s.id" +
             "    from seminars s\n" +
+            "    where start_time between ?1 \\:\\:timestamp and ?2 \\:\\:timestamp\n",
+            nativeQuery = true)
+    List<Long> findAllByStartTimeBetween(String startTime, String endTime);
+
+    @Query(value = "select  s.id" +
+            "    from seminars s\n" +
             "    left join seminars_mentors sm on (sm.seminar_id = s.id)\n" +
             "    left join user_profiles up on (up.account_id = sm.user_profile_id)\n" +
             "    where start_time between ?1 \\:\\:timestamp and ?2 \\:\\:timestamp\n" +

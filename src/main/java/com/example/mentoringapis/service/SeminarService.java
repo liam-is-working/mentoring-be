@@ -19,6 +19,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -31,8 +36,17 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 public class SeminarService {
     private final SeminarRepository seminarRepository;
     private final AccountsRepository accountsRepository;
+    private final FireStoreService fireStoreService;
     private final DepartmentRepository departmentRepository;
     private final StaticResourceService staticResourceService;
+    private final FeedbackService feedbackService;
+
+    public List<Long> getTodaySeminarIds(){
+        var startTime = DateTimeUtils.nowInVietnam().truncatedTo(ChronoUnit.DAYS);
+        var endTime = startTime.plusDays(1);
+        return seminarRepository
+                .findAllByStartTimeBetween(startTime.format(DEFAULT_DATE_TIME_FORMATTER), endTime.format(DEFAULT_DATE_TIME_FORMATTER));
+    }
 
     public List<SeminarResponse> getALlByDepartmentId(int departmentId) throws ResourceNotFoundException {
         var department = departmentRepository.findById(departmentId);
@@ -97,7 +111,7 @@ public class SeminarService {
         return mentorProfiles;
     }
 
-    public SeminarResponse create(CreateSeminarRequest request, Integer departmentId) throws ClientBadRequestError {
+    public SeminarResponse create(CreateSeminarRequest request, Integer departmentId) throws ClientBadRequestError, IOException {
         Set<UserProfile> mentorProfiles = getMentorProfiles(request.getMentorIds());
         var newSeminar = new Seminar();
         Optional.ofNullable(mentorProfiles).ifPresent(newSeminar::setMentors);
@@ -112,14 +126,15 @@ public class SeminarService {
             newSeminar.setDepartment(department.orElse(null));
         }
         seminarRepository.save(newSeminar);
+        fireStoreService.createDiscussionRoom(newSeminar.getId());
+        feedbackService.initiateFeedback(newSeminar);
         return SeminarResponse.fromSeminarEntity(newSeminar, staticResourceService);
     }
 
     public CustomPagingResponse<SeminarResponse> searchByDateAndName(String startTime, String endTime, String searchName, Integer departmentId, String status, Pageable p){
-        var searchEndTime = DateTimeUtils.parseRoundDate(endTime).plusDays(1).format(DEFAULT_DATE_TIME_FORMATTER);
         var idResults = Optional.ofNullable(departmentId)
-                .map(id -> seminarRepository.byDate(startTime,searchEndTime,searchName, id))
-                .orElse(seminarRepository.byDate(startTime,searchEndTime,searchName));
+                .map(id -> seminarRepository.byDate(startTime,endTime,searchName, id))
+                .orElse(seminarRepository.byDate(startTime,endTime,searchName));
         var count = idResults.size();
         var offset = Math.min(p.getPageSize()*p.getPageNumber(),count);
         var offsetTo = Math.min(offset+p.getPageSize(),count);

@@ -4,6 +4,7 @@ import com.example.mentoringapis.entities.Account;
 import com.example.mentoringapis.errors.FirebaseError;
 import com.example.mentoringapis.repositories.AccountsRepository;
 import com.example.mentoringapis.service.AuthService;
+import com.example.mentoringapis.service.MailService;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class DummyController {
 
     private final AuthService authService;
+    private final MailService mailService;
     private final AccountsRepository accountsRepository;
 
     @GetMapping(value = "helloWorld")

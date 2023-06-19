@@ -1,5 +1,6 @@
 package com.example.mentoringapis.service;
 
+import com.example.mentoringapis.entities.Account;
 import com.example.mentoringapis.entities.UserProfile;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.upStreamModels.*;
@@ -46,6 +47,8 @@ public class UserProfileService {
                     prof.setAvatarUrl(request.getAvatarUrl());
                     prof.setCoverUrl(request.getCoverUrl());
                     prof.setDescription(request.getDescription());
+                    if(request.getActivateAccount())
+                        prof.getAccount().setStatus(Account.Status.ACTIVATED.name());
                     if(request.getDob() != null){
                         prof.setDob(Date.valueOf(request.getDob()));
                     }

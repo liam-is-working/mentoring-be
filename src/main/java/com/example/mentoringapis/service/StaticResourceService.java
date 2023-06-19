@@ -5,15 +5,11 @@ import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Bucket;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.URL;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static com.example.mentoringapis.configurations.ConstantConfiguration.*;
 
@@ -35,9 +31,9 @@ public class StaticResourceService {
     }
 
     public String uploadAttachment(MultipartFile file) throws IOException {
-        var blobName = ATTACHMENTS_RESOURCE_PATH.concat(UUID.randomUUID().toString());
+        var blobName = String.format(ATTACHMENTS_RESOURCE_FORMAT, UUID.randomUUID().toString(), file.getOriginalFilename());
         Blob b = bucket.create(blobName, file.getBytes(), file.getContentType());
-        return b.getSelfLink();
+        return b.getMediaLink();
     }
 
     public String uploadJsonPayload(byte[] content) throws IOException {

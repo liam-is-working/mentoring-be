@@ -7,6 +7,7 @@ import com.example.mentoringapis.entities.UserProfile;
 import com.example.mentoringapis.errors.ClientBadRequestError;
 import com.example.mentoringapis.errors.FirebaseError;
 import com.example.mentoringapis.errors.MentoringAuthenticationError;
+import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.downStreamModels.FirebaseBaseResponse;
 import com.example.mentoringapis.models.downStreamModels.FirebaseErrorResponse;
 import com.example.mentoringapis.models.upStreamModels.*;
@@ -185,7 +186,6 @@ public class AuthService {
                 .map(account -> {
                     if (!isFptStudentEmail && !account.isAuthenticated()) {
                         account.setAuthenticated(true);
-                        account.setStatus(Account.Status.ACTIVATED.name());
                         accountsRepository.save(account);
                     }
                     return SignInRes.buildFromAccount(account, jwtTokenProvider);
@@ -223,7 +223,6 @@ public class AuthService {
 
         return createdAccount;
     }
-
 
     public MentorAccountResponse createMentorAccount(CreateMentorAccountRequest request) throws MentoringAuthenticationError {
         if(ValidatorUtils.isFptStudentEMail(request.getEmail()))
