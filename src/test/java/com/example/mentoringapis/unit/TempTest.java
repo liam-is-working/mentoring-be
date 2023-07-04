@@ -1,18 +1,7 @@
 package com.example.mentoringapis.unit;
 
-import biweekly.Biweekly;
-import biweekly.ICalVersion;
-import biweekly.ICalendar;
-import biweekly.component.VEvent;
-import biweekly.io.ParseContext;
-import biweekly.io.scribe.property.RecurrenceRuleScribe;
-import biweekly.parameter.ICalParameters;
-import biweekly.property.RecurrenceRule;
-import biweekly.property.Summary;
-import biweekly.util.Duration;
-import biweekly.util.Frequency;
-import biweekly.util.Recurrence;
-import biweekly.util.com.google.ical.compat.javautil.DateIterator;
+import com.example.mentoringapis.configurations.MentoringApisConfig;
+import com.example.mentoringapis.entities.UserProfile;
 import com.jayway.jsonpath.JsonPath;
 import com.mailjet.client.ClientOptions;
 import com.mailjet.client.MailjetClient;
@@ -20,38 +9,73 @@ import com.mailjet.client.MailjetRequest;
 import com.mailjet.client.MailjetResponse;
 import com.mailjet.client.errors.MailjetException;
 import com.mailjet.client.resource.Emailv31;
+import lombok.Data;
+import net.fortuna.ical4j.model.Recur;
+import net.fortuna.ical4j.transform.recurrence.Frequency;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
+import java.util.Optional;
 
+@SpringBootTest(classes = MentoringApisConfig.class)
 public class TempTest {
+
+
+    @Data
+    public static class ScheduleRequestBody{
+        String startTime;
+        Boolean daily;
+        Boolean weekly;
+        Boolean once;
+    }
+
+    @Data
+    public static class Schedule{
+        UserProfile userProfile;
+        LocalDateTime seedDate;
+        String rrule;
+    }
+
+    public String buildRule(ScheduleRequestBody request){
+        Recur<LocalDateTime> recur = null;
+        if(request.daily)
+            recur = new Recur<>(Frequency.DAILY, Integer.MAX_VALUE);
+        if(request.weekly)
+            recur = new Recur<>(Frequency.WEEKLY, Integer.MAX_VALUE);
+
+        return Optional.ofNullable(recur).map(Recur::toString).orElse(null);
+    }
+
+    public List<LocalDateTime> getAllOccurrencesBetween(LocalDateTime startPeriod, LocalDateTime endPeriod, Schedule schedule){
+        if(schedule.rrule==null)
+            return List.of();
+        return new Recur<LocalDateTime>(schedule.rrule).getDates(schedule.seedDate, startPeriod, endPeriod);
+    }
+
+
+    public List<LocalDateTime> buildRuleICal(){
+        Recur<LocalDateTime> recur = new Recur<>(Frequency.DAILY, Integer.MAX_VALUE);
+        return recur.getDates(LocalDateTime.now(), LocalDateTime.now().plusDays(10), LocalDateTime.now().plusDays(16));
+    }
+
+//    public List<LocalDateTime> buildMultipleRule(){
+//
+//    }
+
     @Test
-    public void testIcalendar(){
-        ICalendar ical = new ICalendar();
-        VEvent event = new VEvent();
-        Summary summary = event.setSummary("Team Meeting");
-        summary.setLanguage("en-us");
-
-        Date start = new Date();
-        event.setDateStart(start);
-
-        Duration duration = new Duration.Builder().hours(1).build();
-        event.setDuration(duration);
-
-        Recurrence recur = new Recurrence.Builder(Frequency.WEEKLY).interval(2).build();
-        event.setRecurrenceRule(recur);
-        ical.addEvent(event);
-        DateIterator it = event.getDateIterator(TimeZone.getDefault());
-        RecurrenceRuleScribe scribe = new RecurrenceRuleScribe();
-        ParseContext context = new ParseContext();
-        context.setVersion(ICalVersion.V2_0);
-        RecurrenceRule rrule = scribe.parseText("FREQ=WEEKLY;INTERVAL=2", null, new ICalParameters(), context);
-        String str = Biweekly.write(ical).go();
+    public void getAllDateOfWeek(){
+        buildRuleICal();
+        var newSchedule = new Schedule();
+        newSchedule.seedDate = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS);
+        newSchedule.setRrule(new Recur<>(Frequency.DAILY, Integer.MAX_VALUE).toString());
+        getAllOccurrencesBetween(LocalDateTime.now().plusDays(100), LocalDateTime.now().plusDays(150), newSchedule);
+        System.out.println("abc");
     }
 
     @Test

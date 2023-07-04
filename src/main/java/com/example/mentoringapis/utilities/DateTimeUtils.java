@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.web.format.DateTimeFormatters;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -18,7 +19,9 @@ public class DateTimeUtils {
     }
 
     public static final String DEFAULT_DATE_TIME_PATTERN  = "yyyy-MM-dd HH:mm:ss";
+    public static final String DEFAULT_TIME_PATTERN  = "HH:mm:ss";
     public static final DateTimeFormatter DEFAULT_DATE_TIME_FORMATTER  = DateTimeFormatter.ofPattern(DEFAULT_DATE_TIME_PATTERN);
+    public static final DateTimeFormatter DEFAULT_TIME_FORMATTER  = DateTimeFormatter.ofPattern(DEFAULT_TIME_PATTERN);
 
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -33,6 +36,15 @@ public class DateTimeUtils {
     public static LocalDateTime parseDate(String date) {
         try {
             return LocalDateTime.parse(date, DEFAULT_DATE_TIME_FORMATTER);
+        } catch (DateTimeParseException e) {
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    public static LocalTime parseSlotTime(String slotTime) {
+        try {
+            return LocalTime.parse(slotTime, DEFAULT_TIME_FORMATTER);
         } catch (DateTimeParseException e) {
             log.error(e.getMessage());
             throw new IllegalArgumentException(e);

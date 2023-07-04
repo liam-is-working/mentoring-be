@@ -13,8 +13,10 @@ import com.example.mentoringapis.repositories.TopicRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +42,9 @@ public class TopicService {
         newTopic.setField(topicField.get());
         newTopic.setMentor(owner.get().getUserProfile());
         newTopic.setName(request.getName());
+        newTopic.setMoney(request.getMoney());
+        newTopic.setDescription(request.getDescription());
+        newTopic.setStatus(Topic.Status.WAITING.name());
 
         topicRepository.save(newTopic);
         return TopicDetailResponse.fromTopicEntity(newTopic);
@@ -67,7 +72,23 @@ public class TopicService {
             throw new ResourceNotFoundException("Request mentor doesnt match with ownerId");
 
         Optional.ofNullable(request.getName()).ifPresent(topicToUpdate::setName);
+        Optional.ofNullable(request.getDescription()).ifPresent(topicToUpdate::setDescription);
+        Optional.ofNullable(request.getMoney()).ifPresent(topicToUpdate::setMoney);
+        topicToUpdate.setStatus(Topic.Status.WAITING.name());
+
         topicRepository.save(topicToUpdate);
         return TopicDetailResponse.fromTopicEntity(topicToUpdate);
     }
+
+    public List<TopicDetailResponse> getAll(){
+        return topicRepository.findAll().stream().map(TopicDetailResponse::fromTopicEntity).collect(Collectors.toList());
+    }
+
+    public List<TopicDetailResponse> changeStatus(List<Long> ids, String status){
+        var topicsToActivate = topicRepository.findAllByIdIn(ids);
+        topicsToActivate.forEach(topic -> topic.setStatus(Topic.Status.valueOf(status).name()));
+        topicRepository.saveAll(topicsToActivate);
+        return topicsToActivate.stream().map(TopicDetailResponse::fromTopicEntity).collect(Collectors.toList());
+    }
+
 }

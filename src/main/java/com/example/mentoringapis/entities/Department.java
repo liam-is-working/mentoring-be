@@ -24,7 +24,7 @@ public class Department {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "department",
-            fetch = FetchType.LAZY)
+            fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Set<Account> staffAccounts = new HashSet<>();
 
     @OneToMany(mappedBy = "department")

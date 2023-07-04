@@ -30,9 +30,14 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>net.sf.biweekly</groupId>
-            <artifactId>biweekly</artifactId>
-            <version>0.6.7</version>
+            <groupId>org.dmfs</groupId>
+            <artifactId>lib-recur</artifactId>
+            <version>0.15.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mnode.ical4j</groupId>
+            <artifactId>ical4j</artifactId>
+            <version>4.0.0-alpha11</version>
         </dependency>
         <dependency>
             <groupId>org.jobrunr</groupId>

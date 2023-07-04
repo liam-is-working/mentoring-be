@@ -20,4 +20,7 @@ public interface AccountsRepository extends CrudRepository<Account, UUID> {
             "where account.id in ?1")
     List<Account> findAllById(Iterable<UUID> uuids);
     Optional<Account> findAccountsByIdAndRole(UUID id, String role);
+    @Override
+    @Query(value = "select * from accounts", nativeQuery = true)
+    Iterable<Account> findAll();
 }

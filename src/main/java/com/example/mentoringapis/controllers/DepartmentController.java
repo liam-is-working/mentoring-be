@@ -1,18 +1,18 @@
 package com.example.mentoringapis.controllers;
 
-import com.example.mentoringapis.entities.Department;
-import com.example.mentoringapis.errors.ClientBadRequestError;
-import com.example.mentoringapis.models.upStreamModels.CreateSeminarRequest;
+import com.example.mentoringapis.errors.ResourceNotFoundException;
+import com.example.mentoringapis.models.upStreamModels.CreateDepartmentRequest;
 import com.example.mentoringapis.models.upStreamModels.DepartmentResponse;
-import com.example.mentoringapis.models.upStreamModels.SeminarResponse;
+import com.example.mentoringapis.models.upStreamModels.UpdateDepartmentRequest;
 import com.example.mentoringapis.repositories.DepartmentRepository;
-import com.example.mentoringapis.service.SeminarService;
-import jakarta.validation.Valid;
+import com.example.mentoringapis.service.DepartmentService;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DepartmentController {
     private final DepartmentRepository departmentRepository;
+    private final DepartmentService departmentService;
 
     @GetMapping
     public ResponseEntity<List<DepartmentResponse>> getAll() {
@@ -30,10 +31,28 @@ public class DepartmentController {
     }
 
     @PostMapping
-    public ResponseEntity<DepartmentResponse> create() {
-        var newDepartment = new Department();
-        newDepartment.setName("randomDepartment");
-        return ResponseEntity.ok(DepartmentResponse.fromDepartment(departmentRepository.save(newDepartment)));
+    public ResponseEntity<DepartmentResponse> create(@RequestBody CreateDepartmentRequest request) throws ResourceNotFoundException {
+        return ResponseEntity.ok(departmentService.createDepartment(request));
+    }
+
+    @PostMapping("/{departmentId}")
+    public ResponseEntity<DepartmentResponse> update(@RequestBody UpdateDepartmentRequest request, @PathVariable int departmentId) throws ResourceNotFoundException {
+        return ResponseEntity.ok(departmentService.updateDepartment(request, departmentId));
+    }
+
+    @PostMapping("/{departmentId}/staffs/add")
+    public ResponseEntity<DepartmentResponse> addStaff(@RequestBody StaffListIds ids, @PathVariable int departmentId) throws ResourceNotFoundException {
+        return ResponseEntity.ok(departmentService.addStaffs(ids.staffIds, departmentId));
+    }
+
+    @PostMapping("/{departmentId}/staffs/remove")
+    public ResponseEntity<DepartmentResponse> removeStaff(@RequestBody StaffListIds ids, @PathVariable int departmentId) throws ResourceNotFoundException {
+        return ResponseEntity.ok(departmentService.removeStaffs(ids.staffIds, departmentId));
+    }
+
+    @Data
+    static class StaffListIds{
+        private List<UUID> staffIds;
     }
 
 }

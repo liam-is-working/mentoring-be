@@ -19,7 +19,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class Account {
     public enum Role{
-        MENTOR, STAFF, STUDENT
+        MENTOR, STAFF, STUDENT, ADMIN
     }
     public enum Status{
         NOT_DEFINE, ACTIVATED, WAITING, INVALIDATE

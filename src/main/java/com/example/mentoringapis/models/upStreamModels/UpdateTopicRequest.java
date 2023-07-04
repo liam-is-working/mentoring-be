@@ -4,7 +4,9 @@ import lombok.Data;
 
 @Data
 public class UpdateTopicRequest {
-    String name=null;
-    Long fieldId=null;
-    Long categoryId=null;
+    String name;
+    String description;
+    Long fieldId;
+    Long categoryId;
+    String money;
 }

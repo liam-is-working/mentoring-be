@@ -5,6 +5,8 @@ import lombok.Data;
 @Data
 public class CreateTopicRequest {
     String name;
+    String description;
     Long fieldId;
     Long categoryId;
+    String money;
 }

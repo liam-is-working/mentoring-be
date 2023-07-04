@@ -9,12 +9,18 @@ import lombok.Setter;
 @Setter
 @Table(name = "topics")
 public class Topic {
+    public enum Status{
+        WAITING, DELETED, ACCEPTED, REJECTED, ARCHIVED
+    }
     @Id
     @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
+    private String money;
+    private String description;
+    private String status;
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)

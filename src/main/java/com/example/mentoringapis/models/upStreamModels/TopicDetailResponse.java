@@ -9,6 +9,9 @@ import lombok.Data;
 public class TopicDetailResponse {
     Long id;
     String name;
+    String description;
+    String money;
+    String status;
     String field;
     String category;
     Long fieldId;
@@ -20,7 +23,10 @@ public class TopicDetailResponse {
                 .category(topic.getCategory().getName())
                 .field(topic.getField().getName())
                 .name(topic.getName())
+                .money(topic.getMoney())
+                .description(topic.getDescription())
                 .id(topic.getId())
+                .status(topic.getStatus())
                 .fieldId(topic.getField().getId())
                 .categoryId(topic.getCategory().getId())
                 .mentor(MentorAccountResponse.fromAccountEntity(topic.getMentor().getAccount()))

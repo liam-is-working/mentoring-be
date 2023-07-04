@@ -1,6 +1,5 @@
 package com.example.mentoringapis.controllers;
 
-import com.example.mentoringapis.entities.Account;
 import com.example.mentoringapis.errors.FirebaseError;
 import com.example.mentoringapis.models.upStreamModels.SignUpWithEmailPasswordRequest;
 import com.example.mentoringapis.service.AuthService;
