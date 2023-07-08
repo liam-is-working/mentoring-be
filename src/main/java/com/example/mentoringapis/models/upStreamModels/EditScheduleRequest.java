@@ -1,16 +1,14 @@
 package com.example.mentoringapis.models.upStreamModels;
 
 import com.example.mentoringapis.utilities.DateTimeUtils;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Objects;
 
 @Data
-public class CreateScheduleRequest {
+public class EditScheduleRequest {
     String startTime;
     String startDate;
     String endDate;

@@ -17,8 +17,10 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,6 +78,12 @@ public class TempTest {
         newSchedule.setRrule(new Recur<>(Frequency.DAILY, Integer.MAX_VALUE).toString());
         getAllOccurrencesBetween(LocalDateTime.now().plusDays(100), LocalDateTime.now().plusDays(150), newSchedule);
         System.out.println("abc");
+    }
+
+    @Test
+    void temp(){
+       List<LocalDate> list = List.of(LocalDate.now());
+       assert list != null;
     }
 
     @Test

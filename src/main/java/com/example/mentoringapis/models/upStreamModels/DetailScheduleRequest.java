@@ -1,7 +1,7 @@
 package com.example.mentoringapis.models.upStreamModels;
 
 import com.example.mentoringapis.entities.Booking;
-import com.example.mentoringapis.entities.Schedule;
+import com.example.mentoringapis.entities.AvailableTime;
 import com.example.mentoringapis.utilities.DateTimeUtils;
 import lombok.Builder;
 import lombok.Data;
@@ -13,9 +13,9 @@ public class DetailScheduleRequest {
     Boolean daily = null;
     Boolean weekly = null;
 
-    public static DetailScheduleRequest fromScheduleEntity(Schedule schedule){
+    public static DetailScheduleRequest fromScheduleEntity(AvailableTime availableTime){
         return DetailScheduleRequest.builder()
-                .startTime(schedule.getSeedTime().format(DateTimeUtils.DEFAULT_DATE_TIME_FORMATTER))
+                .startTime(availableTime.getStartTime().format(DateTimeUtils.DEFAULT_TIME_FORMATTER))
                 .build();
     }
 

@@ -43,6 +43,9 @@ public class UserProfile {
     @JsonIgnore
     private Account account;
 
+    @OneToMany(mappedBy = "mentor")
+    private Set<AvailableTime> availableTimes = new HashSet<>();
+
     @ManyToMany(mappedBy = "mentors")
     private Set<Seminar> seminars = new HashSet<>();
 

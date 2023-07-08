@@ -11,4 +11,8 @@ import org.springframework.http.HttpStatus;
 public class ClientBadRequestError extends Throwable {
     final HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
     String errorMessages;
+
+    public ClientBadRequestError(String errorMessages) {
+        this.errorMessages = errorMessages;
+    }
 }
