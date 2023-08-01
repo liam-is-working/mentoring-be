@@ -1,5 +1,6 @@
 package com.example.mentoringapis.controllers;
 
+import com.example.mentoringapis.errors.ClientBadRequestError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.upStreamModels.CreateDepartmentRequest;
 import com.example.mentoringapis.models.upStreamModels.DepartmentResponse;
@@ -48,6 +49,12 @@ public class DepartmentController {
     @PostMapping("/{departmentId}/staffs/remove")
     public ResponseEntity<DepartmentResponse> removeStaff(@RequestBody StaffListIds ids, @PathVariable int departmentId) throws ResourceNotFoundException {
         return ResponseEntity.ok(departmentService.removeStaffs(ids.staffIds, departmentId));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity removeDepartment(@PathVariable int id) throws ClientBadRequestError, ResourceNotFoundException {
+        departmentService.deleteDepartment(id);
+        return ResponseEntity.ok().build();
     }
 
     @Data

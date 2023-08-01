@@ -84,6 +84,14 @@ public class TopicService {
         return topicRepository.findAll().stream().map(TopicDetailResponse::fromTopicEntity).collect(Collectors.toList());
     }
 
+    public List<TopicDetailResponse> getByMentorId(UUID mentorId){
+        return topicRepository.findALlByMentorId(mentorId)
+                .stream()
+                .filter(topic -> topic.getStatus().equals(Topic.Status.ACCEPTED.name()))
+                .map(TopicDetailResponse::fromTopicEntityNoMentor)
+                .collect(Collectors.toList());
+    }
+
     public List<TopicDetailResponse> changeStatus(List<Long> ids, String status){
         var topicsToActivate = topicRepository.findAllByIdIn(ids);
         topicsToActivate.forEach(topic -> topic.setStatus(Topic.Status.valueOf(status).name()));

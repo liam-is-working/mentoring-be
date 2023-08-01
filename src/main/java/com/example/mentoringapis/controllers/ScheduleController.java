@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/schedules")
 @RequiredArgsConstructor
@@ -20,6 +22,7 @@ public class ScheduleController {
 
     @PostMapping()
     public ResponseEntity createSchedule(Authentication authentication, @RequestBody CreateScheduleRequest createScheduleRequest) throws ResourceNotFoundException, ClientBadRequestError {
+        createScheduleRequest.validate();
         var currentUserId = ((CustomUserDetails) authentication.getPrincipal()).getAccount().getId();
         scheduleService.createSchedule(currentUserId, createScheduleRequest);
         return ResponseEntity.ok().build();
@@ -66,7 +69,17 @@ public class ScheduleController {
                                                 @RequestParam String endDate) throws ResourceNotFoundException {
         var currentUserId = ((CustomUserDetails) authentication.getPrincipal()).getAccount().getId();
         return ResponseEntity.ok(scheduleService
-                .getMentorScheduleBetween(currentUserId, DateTimeUtils.parseStringToLocalDate(startDate), DateTimeUtils.parseStringToLocalDate(endDate))
+                .getMentorScheduleBetween(currentUserId, DateTimeUtils.parseStringToLocalDate(startDate), DateTimeUtils.parseStringToLocalDate(endDate), true)
+        );
+    }
+
+    @GetMapping("/by-mentor/{mentorId}")
+    public ResponseEntity<ScheduleResponse> getByMentorId(@RequestParam String startDate,
+                                                          @RequestParam String endDate,
+                                                          @RequestParam(defaultValue = "false", name = "showBooking") Boolean showBooking,
+                                                          @PathVariable UUID mentorId) throws ResourceNotFoundException {
+        return ResponseEntity.ok(scheduleService
+                .getMentorScheduleBetween(mentorId, DateTimeUtils.parseStringToLocalDate(startDate), DateTimeUtils.parseStringToLocalDate(endDate), showBooking)
         );
     }
 }

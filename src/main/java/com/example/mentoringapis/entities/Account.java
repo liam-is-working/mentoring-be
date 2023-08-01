@@ -8,33 +8,30 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.ZonedDateTime;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 @Entity
 @Getter
 @Setter
-@Table(name = "Accounts")
+@Table(name = "accounts")
 @NoArgsConstructor
 public class Account {
     public enum Role{
         MENTOR, STAFF, STUDENT, ADMIN
     }
     public enum Status{
-        NOT_DEFINE, ACTIVATED, WAITING, INVALIDATE
+        ACTIVATED, WAITING, INVALIDATE
     }
-    public Account(String email, String firebaseUuid, Role role) {
+
+    public Account(String email, Role role) {
         this.email = email;
-        this.firebaseUuid = firebaseUuid;
         this.role = role.name();
     }
 
-    public Account(String email, String firebaseUuid, Role role, boolean isAuthenticated) {
-        this.email = email;
-        this.firebaseUuid = firebaseUuid;
-        this.role = role.name();
-        this.isAuthenticated = isAuthenticated;
+    public void setStatus(String changeStatus) {
+        if(changeStatus==null || (Status.WAITING.name().equals(changeStatus) && Status.WAITING.name().equals(status)))
+            return;
+        status = changeStatus;
     }
 
     @Id
@@ -42,13 +39,11 @@ public class Account {
     private UUID id;
 
     private String email;
-    private String firebaseUuid;
     private String role;
     private String status;
     @Temporal(TemporalType.TIMESTAMP)
     @CreationTimestamp
     private ZonedDateTime createdDate;
-    private boolean isAuthenticated;
 
     @JsonIgnore
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "account")

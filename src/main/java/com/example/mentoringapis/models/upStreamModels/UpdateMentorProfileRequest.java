@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
 public class UpdateMentorProfileRequest {
     private String fullName;
     private String phoneNum;
-    @EnumField(availableValues = {"ACTIVATED", "NOT_DEFINE", "WAITING", "INVALIDATE"},
-    message = "enum: ACTIVATED, NOT_DEFINE, WAITING, INVALIDATE")
+    @EnumField(availableValues = {"ACTIVATED", "WAITING", "INVALIDATE"},
+    message = "enum: ACTIVATED, WAITING, INVALIDATE")
     private String status;
 }

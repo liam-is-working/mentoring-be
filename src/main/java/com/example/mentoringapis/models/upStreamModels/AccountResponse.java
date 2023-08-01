@@ -28,7 +28,6 @@ public class AccountResponse {
                 .createdDate(account.getCreatedDate().toLocalDateTime().format(DateTimeUtils.DEFAULT_DATE_TIME_FORMATTER))
                 .role(account.getRole())
                 .email(account.getEmail())
-                .isAuthenticated(account.isAuthenticated())
                 .build();
     }
 

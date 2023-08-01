@@ -63,7 +63,7 @@ public class SeminarResponse {
         }
     }
 
-    public static SeminarResponse fromSeminarEntity(Seminar seminarEntity, StaticResourceService staticResourceService) {
+    public static SeminarResponse fromSeminarEntity(Seminar seminarEntity) {
         var attachmentUrls = ofNullable(seminarEntity.getAttachmentUrl()).filter(s -> !s.isBlank()).map(s -> s.split(";")).orElse(null);
         Map<String, String> attachmentMaps = null;
         try {

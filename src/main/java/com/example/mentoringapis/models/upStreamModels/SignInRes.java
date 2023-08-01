@@ -23,6 +23,7 @@ public class SignInRes {
     String sex;
     String fullName;
     String dob;
+    String departmentName;
     String avatarUrl;
     Integer departmentId;
     boolean isAuthenticated;
@@ -30,9 +31,11 @@ public class SignInRes {
     public static SignInRes buildFromAccount(Account account, JwtTokenProvider jwtTokenProvider){
         var userProfile = account.getUserProfile();
         var accessToken = jwtTokenProvider.generateToken(account.getId());
+
         return SignInRes.builder()
                 .accessToken(accessToken)
                 .accountId(account.getId())
+                .departmentName(Optional.ofNullable(account.getDepartment()).map(Department::getName).orElse(null))
                 .status(account.getStatus())
                 .avatarUrl(userProfile.getAvatarUrl())
                 .dob(String.valueOf(userProfile.getDob()))
@@ -42,7 +45,6 @@ public class SignInRes {
                 .departmentId(Optional.ofNullable(account.getDepartment()).map(Department::getId).orElse(null))
                 .role(account.getRole())
                 .fullName(userProfile.getFullName())
-                .isAuthenticated(account.isAuthenticated())
                 .build();
     }
 }

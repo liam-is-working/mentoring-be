@@ -1,11 +1,11 @@
 package com.example.mentoringapis.service;
 
-import com.example.mentoringapis.entities.Account;
-import com.example.mentoringapis.entities.Seminar;
-import com.example.mentoringapis.entities.UserProfile;
+import com.example.mentoringapis.entities.*;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.upStreamModels.SeminarFeedbackReportResponse;
+import com.example.mentoringapis.repositories.BookingRepository;
 import com.example.mentoringapis.repositories.SeminarRepository;
+import com.example.mentoringapis.repositories.UserProfileRepository;
 import com.example.mentoringapis.utilities.DateTimeUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
@@ -15,7 +15,9 @@ import com.mailjet.client.errors.MailjetException;
 import com.mailjet.client.resource.Emailv31;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.BackgroundJob;
+import org.jobrunr.spring.annotations.Recurring;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,10 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -40,6 +39,8 @@ public class MailService {
     private final SeminarService seminarService;
     private final SeminarRepository seminarRepository;
     private final FeedbackService feedbackService;
+    private final UserProfileRepository userProfileRepository;
+    private final BookingRepository bookingRepository;
     private final ObjectMapper om;
 
     @Value("${mail.delayDuration}")
@@ -58,21 +59,131 @@ public class MailService {
                 ));
     }
 
+    private final JSONObject sender = new JSONObject()
+            .put("Email", "lamnvse151336@fpt.edu.vn")
+            .put("Name", "GrowthMe");
+
+    private final JSONObject receiver = new JSONObject()
+            .put("Email", "vulam270402@gmail.com")
+            .put("Name", "GrowthMe");
+
+    private List<JSONObject> buildRecipientsFromBooking(Booking booking){
+
+        if(booking == null)
+            return null;
+
+        var recipients = new ArrayList<JSONObject>();
+        booking.getBookingMentees().stream()
+                .map(BookingMentee::getMentee)
+                .forEach(mentee -> recipients.add(
+                        new JSONObject()
+                                .put("Email", mentee.getAccount().getEmail())
+                                .put("Name", mentee.getFullName())
+                ));
+        recipients.add(new JSONObject()
+                .put("Email", booking.getMentor().getAccount().getEmail())
+                .put("Name", booking.getMentor().getFullName()));
+
+        return recipients;
+    }
+
+    public void sendReminderEmail(long bookingId){
+        var booking = bookingRepository.findById(bookingId)
+                .orElse(null);
+        if(booking==null || !Booking.Status.ACCEPTED.name().equals(booking.getStatus()))
+            return;
+
+        var recipients = buildRecipientsFromBooking(booking);
+        recipients.forEach(recipient -> {
+            var request = new MailjetRequest(Emailv31.resource)
+                    .property(Emailv31.MESSAGES, new JSONArray()
+                            .put(new JSONObject()
+                                    .put(Emailv31.Message.FROM, sender)
+                                    .put(Emailv31.Message.TO, new JSONArray()
+                                            .put(recipient)
+                                            .put(receiver)
+                                    )
+                                    .put(Emailv31.Message.TEMPLATEID, 4971040)
+                                    .put(Emailv31.Message.TEMPLATELANGUAGE, true)
+                                    .put(Emailv31.Message.SUBJECT, "Growth Me - Booking reminder")
+                                    .put(Emailv31.Message.VARIABLES, generateReminderMailVariable(booking, recipient.get("Name").toString())
+                                    )
+                            )
+                    );
+            try {
+                mailjetClient.post(request);
+            } catch (MailjetException e) {
+                log.warn("Email exception", e);
+            }
+        });
+
+
+    }
+
+    public void sendBookingMail(long bookingId){
+        var booking = bookingRepository.findById(bookingId)
+                .orElse(null);
+        if(booking==null)
+            return;
+        var recipients = buildRecipientsFromBooking(booking);
+
+        recipients.forEach(recipient -> {
+            var request = new MailjetRequest(Emailv31.resource)
+                    .property(Emailv31.MESSAGES, new JSONArray()
+                            .put(new JSONObject()
+                                    .put(Emailv31.Message.FROM, sender)
+                                    .put(Emailv31.Message.TO, new JSONArray()
+                                            .put(recipient)
+                                            .put(receiver)
+                                    )
+                                    .put(Emailv31.Message.TEMPLATEID, 4964663)
+                                    .put(Emailv31.Message.TEMPLATELANGUAGE, true)
+                                    .put(Emailv31.Message.SUBJECT, "Growth Me - Booking update")
+                                    .put(Emailv31.Message.VARIABLES, generateBookingMailVariable(booking, recipient.get("Name").toString())
+                                    )
+                            )
+                    );
+            try {
+                mailjetClient.post(request);
+            } catch (MailjetException e) {
+                log.warn("Email exception", e);
+            }
+        });
+
+
+    }
+
+    private JSONObject generateReminderMailVariable(Booking booking, String firstName){
+        return new JSONObject()
+                .put("firstName", firstName)
+                .put("bookingDate", booking.bookDateAsString())
+                .put("startTime", booking.startTimeAsString())
+                .put("endTime", booking.endTimeAsString())
+                .put("topicName", booking.getTopic().getName())
+                .put("roomLink", String.format("https://studywithmentor-swm.web.app/meeting-room/%s",booking.getId()));
+    }
+
+    private JSONObject generateBookingMailVariable(Booking booking, String firstName){
+        return new JSONObject()
+                .put("firstName", firstName)
+                .put("bookingDate", booking.bookDateAsString())
+                .put("startTime", booking.startTimeAsString())
+                .put("endTime", booking.endTimeAsString())
+                .put("detailLink", "https://studywithmentor-swm.web.app/booking/list")
+                .put("allBookingLink", "https://studywithmentor-swm.web.app/booking/list")
+                .put("status", booking.getStatus());
+    }
+
     public void sendEmail(Account mentorAccount, Seminar seminar, SeminarFeedbackReportResponse reportResponse) throws MailjetException {
         var request = new MailjetRequest(Emailv31.resource)
                 .property(Emailv31.MESSAGES, new JSONArray()
                         .put(new JSONObject()
-                                .put(Emailv31.Message.FROM, new JSONObject()
-                                        .put("Email", "lamnvse151336@fpt.edu.vn")
-                                        .put("Name", "GrowthMe"))
+                                .put(Emailv31.Message.FROM, sender)
                                 .put(Emailv31.Message.TO, new JSONArray()
                                     .put(new JSONObject()
                                             .put("Email", mentorAccount.getEmail())
                                             .put("Name", mentorAccount.getUserProfile().getFullName()))
-                                        .put(new JSONObject()
-                                            .put("Email", "vulam270403@gmail.com")
-                                            .put("Name", "Vu Lam")
-                                        )
+                                        .put(receiver)
                                 )
                                 .put(Emailv31.Message.TEMPLATEID, 4887683)
                                 .put(Emailv31.Message.TEMPLATELANGUAGE, true)
@@ -124,6 +235,7 @@ public class MailService {
     }
 
 
+    //TODO store question position
     private String getMentorConnectCountFromReportStatistic(String mentorName, Object report){
         var searchString = String.format(MENTOR_CONNECTING_QUESTION_FORMAT, mentorName);
         var jpath = String.format("$[?(@.question == '%s')].statistics", searchString);
@@ -150,8 +262,37 @@ public class MailService {
                 .put("loginLink", "https://studywithmentor-swm.web.app/");
     }
 
-//    @Recurring(id = "send-invitation-email-job", cron = "42 17 1 1 *", zoneId = "Asia/Ho_Chi_Minh")
-//    @Job(name = "Sending invitation email job")
+    public void sendInvitationEmail(UUID mentorId) throws ResourceNotFoundException, MailjetException {
+        var mentor = userProfileRepository.findUserProfileByAccount_Id(mentorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cannot found profile"));
+        var request = new MailjetRequest(Emailv31.resource)
+                .property(Emailv31.MESSAGES, new JSONArray()
+                        .put(new JSONObject()
+                                .put(Emailv31.Message.FROM, sender)
+                                .put(Emailv31.Message.TO, new JSONArray()
+                                        .put(new JSONObject()
+                                                .put("Email", mentor.getAccount().getEmail())
+                                                .put("Name", mentor.getFullName()))
+                                        .put(receiver)
+                                )
+                                .put(Emailv31.Message.TEMPLATEID, 4984820)
+                                .put(Emailv31.Message.TEMPLATELANGUAGE, true)
+                                .put(Emailv31.Message.SUBJECT, "Growth Me - Mentor Invitation")
+                                .put(Emailv31.Message.VARIABLES, generateVariableForMentorInvitation(mentor)
+                                )
+                        )
+                );
+        mailjetClient.post(request);
+    }
+
+    public JSONObject generateVariableForMentorInvitation(UserProfile mentorProfile){
+        return new JSONObject()
+                .put("fullName",mentorProfile.getFullName())
+                .put("loginLink", "https://studywithmentor-swm.web.app/");
+    }
+
+    @Recurring(id = "send-invitation-email-job", cron = "0 1 * * *", zoneId = "Asia/Ho_Chi_Minh")
+    @Job(name = "Sending invitation email job")
     public void sendingMailJob() throws MailjetException {
         var seminarIds = seminarService.getTodaySeminarIds();
         var seminarsMap = accumulateSeminars(seminarIds);

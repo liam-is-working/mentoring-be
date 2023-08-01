@@ -17,6 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/topics")
@@ -24,6 +25,11 @@ import java.util.List;
 public class TopicController {
 
     private final TopicService topicService;
+
+    @GetMapping("/by-mentor/{mentorId}")
+    public ResponseEntity getTopicByMentor(@PathVariable UUID mentorId){
+        return ResponseEntity.ok(topicService.getByMentorId(mentorId));
+    }
 
     @PostMapping()
     public ResponseEntity<TopicDetailResponse> createTopic(@RequestBody CreateTopicRequest topicRequest, Authentication authentication) throws ResourceNotFoundException {

@@ -12,6 +12,7 @@ import org.hibernate.type.SqlTypes;
 import java.sql.Date;
 import java.sql.SQLType;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -46,8 +47,39 @@ public class UserProfile {
     @OneToMany(mappedBy = "mentor")
     private Set<AvailableTime> availableTimes = new HashSet<>();
 
+    @OneToMany(mappedBy = "mentor", fetch = FetchType.LAZY)
+    private Set<Topic> topics = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "booking_mentee",
+            joinColumns = @JoinColumn(name = "mentee_id"),
+            inverseJoinColumns = @JoinColumn(name = "booking_id")
+    )
+    private Set<Booking> bookings = new HashSet<>();
+
+    @OneToMany(mappedBy = "mentee", fetch = FetchType.LAZY)
+    private Set<BookingMentee> bookingMentees = new HashSet<>();
+
     @ManyToMany(mappedBy = "mentors")
     private Set<Seminar> seminars = new HashSet<>();
+
+    @OneToMany(mappedBy = "receiver", fetch = FetchType.LAZY)
+    private Set<MeetingFeedback> feedbacks = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name="mentor_mentee",
+            joinColumns=@JoinColumn(name="mentor_id"),
+            inverseJoinColumns=@JoinColumn(name="mentee_id")
+    )
+    private Set<UserProfile> followers = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name="mentor_mentee",
+            joinColumns=@JoinColumn(name="mentee_id"),
+            inverseJoinColumns=@JoinColumn(name="mentor_id")
+    )
+    private Set<UserProfile> followings = new HashSet<>();
 
     public Account getAccount() {
         return account;

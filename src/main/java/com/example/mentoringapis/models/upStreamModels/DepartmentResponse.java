@@ -18,8 +18,9 @@ public class DepartmentResponse {
     private int id;
     private String name;
     private LocalDateTime createdAt;
-    private Set<UUID> staffIds = new HashSet<>();
-    private Set<Long> seminarIds = new HashSet<>();
+    private Set<UUID> staffIds;
+    private Set<Long> seminarIds;
+    private Set<UserProfileResponse> staffs;
 
     public static DepartmentResponse fromDepartment(Department department){
         return DepartmentResponse.builder()
@@ -28,6 +29,7 @@ public class DepartmentResponse {
                 .name(department.getName())
                 .seminarIds(department.getSeminars().stream().map(Seminar::getId).collect(Collectors.toSet()))
                 .staffIds(department.getStaffAccounts().stream().map(Account::getId).collect(Collectors.toSet()))
+                .staffs(department.getStaffAccounts().stream().map(Account::getUserProfile).map(UserProfileResponse::fromUserProfile).collect(Collectors.toSet()))
                 .build();
     }
 }

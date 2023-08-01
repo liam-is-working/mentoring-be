@@ -1,5 +1,6 @@
 package com.example.mentoringapis.controllers;
 
+import com.example.mentoringapis.errors.ClientBadRequestError;
 import com.example.mentoringapis.errors.FirebaseError;
 import com.example.mentoringapis.errors.MentoringAuthenticationError;
 import com.example.mentoringapis.models.upStreamModels.*;
@@ -21,27 +22,9 @@ public class SignInController {
 
     private final AuthService authService;
 
-    @RequestMapping(value = "/with-password", method = RequestMethod.POST)
-    public Mono<ResponseEntity<SignInRes>> signInWithPassword(@Valid @RequestBody SignInWithPasswordRequest request) {
-        return authService.signInWithEmailAndPassword(request.getEmail(), request.getPassword())
-                .map(ResponseEntity::ok);
-    }
-
     @RequestMapping(value = "/with-google", method = RequestMethod.POST)
-    public ResponseEntity<SignInRes> signInWithGoogle(@Valid @RequestBody SignInWithGoogleRequest request) throws FirebaseAuthException, FirebaseError, MentoringAuthenticationError {
+    public ResponseEntity<SignInRes> signInWithGoogle(@Valid @RequestBody SignInWithGoogleRequest request) throws FirebaseAuthException, FirebaseError, MentoringAuthenticationError, ClientBadRequestError {
         return ResponseEntity.ok(authService.signInWithGoogle(request));
-    }
-
-    @RequestMapping(value = "/send-reset-email", method = RequestMethod.POST)
-    public Mono<ResponseEntity<String>> signInWithGoogle(@Valid @RequestBody SendMailResetPasswordRequest request) throws FirebaseError {
-        return authService.sendPasswordResetEmail(request.getEmail())
-                .map(ResponseEntity::ok);
-    }
-
-    @RequestMapping(value = "/apply-password-change", method = RequestMethod.POST)
-    public Mono<ResponseEntity<String>> signInWithGoogle(@Valid @RequestBody ResetPasswordRequest request) {
-        return authService.applyPasswordChange(request.getOobCode(), request.getPassword())
-                .map(ResponseEntity::ok);
     }
 
 }

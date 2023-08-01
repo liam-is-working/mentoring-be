@@ -13,6 +13,7 @@ import java.util.UUID;
 public class StaffAccountResponse {
     private UUID id;
     private String email;
+    private String status;
     private String firebaseUuid;
     private String role;
     private boolean isAuthenticated;
@@ -37,12 +38,11 @@ public class StaffAccountResponse {
     public static StaffAccountResponse fromAccountEntity(Account account){
         return StaffAccountResponse.builder()
                 .id(account.getId())
+                .status(account.getStatus())
                 .email(account.getEmail())
-                .firebaseUuid(account.getFirebaseUuid())
-                .isAuthenticated(account.isAuthenticated())
                 .role(account.getRole())
                 .department(Optional.ofNullable(account.getDepartment()).map(DepartmentRes::fromDepartment).orElse(null))
-                .profile(Optional.ofNullable(account.getUserProfile()).map(prof -> UserProfileResponse.fromUserProfile(prof, null)).orElse(null))
+                .profile(Optional.ofNullable(account.getUserProfile()).map(prof -> UserProfileResponse.fromUserProfile(prof)).orElse(null))
                 .build();
     }
 }

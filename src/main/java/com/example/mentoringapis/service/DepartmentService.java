@@ -2,6 +2,7 @@ package com.example.mentoringapis.service;
 
 import com.example.mentoringapis.entities.Account;
 import com.example.mentoringapis.entities.Department;
+import com.example.mentoringapis.errors.ClientBadRequestError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.upStreamModels.CreateDepartmentRequest;
 import com.example.mentoringapis.models.upStreamModels.DepartmentResponse;
@@ -63,6 +64,13 @@ public class DepartmentService {
 
         departmentRepository.save(department);
         return DepartmentResponse.fromDepartment(department);
+    }
+
+    public void deleteDepartment(int id) throws ResourceNotFoundException, ClientBadRequestError {
+        var department = getDepartment(id);
+        if(!department.getStaffAccounts().isEmpty())
+            throw new ClientBadRequestError(String.format("Department [%s] staff list are not empty", id));
+        departmentRepository.delete(department);
     }
 
     public DepartmentResponse addStaffs(List<UUID> ids, Integer departmentId) throws ResourceNotFoundException {

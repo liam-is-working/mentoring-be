@@ -1,6 +1,7 @@
 package com.example.mentoringapis.models.upStreamModels;
 
 import com.example.mentoringapis.entities.Account;
+import com.example.mentoringapis.entities.Department;
 import com.example.mentoringapis.entities.UserProfile;
 import com.example.mentoringapis.service.StaticResourceService;
 import com.example.mentoringapis.utilities.DateTimeUtils;
@@ -34,8 +35,6 @@ public class MentorAccountResponse {
         return MentorAccountResponse.builder()
                 .id(account.getId())
                 .email(account.getEmail())
-                .firebaseUuid(account.getFirebaseUuid())
-                .isAuthenticated(account.isAuthenticated())
                 .role(account.getRole())
                 .avatarUrl(account.getUserProfile().getAvatarUrl())
                 .avatarLink(account.getUserProfile().getAvatarUrl())

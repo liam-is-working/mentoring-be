@@ -39,10 +39,6 @@ public class FeedbackController {
         return feedbackService.getFeedbackReport(seminarId)
                 .map(ResponseEntity::ok);
     }
-    @PostMapping("/send-invitation/{seminarId}")
-    public ResponseEntity<List<UUID>> sendInvitationEmail(@RequestBody @Valid MentorIdsRequest mentorIds, @PathVariable Long seminarId) throws IOException {
-        return ResponseEntity.ok(mailService.sendEmail(seminarId, mentorIds.mentorIds));
-    }
 
     @Data
     private static class MentorIdsRequest{

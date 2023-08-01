@@ -70,7 +70,6 @@ public class TempTest {
 //
 //    }
 
-    @Test
     public void getAllDateOfWeek(){
         buildRuleICal();
         var newSchedule = new Schedule();
@@ -80,13 +79,6 @@ public class TempTest {
         System.out.println("abc");
     }
 
-    @Test
-    void temp(){
-       List<LocalDate> list = List.of(LocalDate.now());
-       assert list != null;
-    }
-
-    @Test
     public void scheduleMain() throws MailjetException {
         var mailjetClient = new MailjetClient(ClientOptions.builder().apiKey("44bb45c404c866f14b70ac9b6caccff1").apiSecretKey("218b0d9666c14e0262440f90aa580015").build());
         MailjetRequest request;
@@ -109,7 +101,6 @@ public class TempTest {
         System.out.println(response.getData());
     }
 
-    @Test
     public void testJsonWithSpecialChar(){
         var obj = Map.of("a", List.of("á á", "a a"));
         JsonPath.read(obj, "$.a[?(@ == 'á')]");

@@ -8,10 +8,11 @@ import com.example.mentoringapis.service.MailService;
 import com.google.firebase.auth.UserRecord;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController("api/dummy")
+@Controller("api/dummy")
 @RequiredArgsConstructor
 public class DummyController {
 
@@ -34,7 +35,6 @@ public class DummyController {
     public Account testAdd() {
         var newAccount =  new Account();
         newAccount.setEmail("example123@gmail.com");
-        newAccount.setFirebaseUuid("123123");
         return accountsRepository.save(newAccount);
     }
 

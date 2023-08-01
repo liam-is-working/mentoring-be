@@ -13,7 +13,7 @@ CREATE table accounts
     role            varchar(8) NOT NULL,
     is_authenticated boolean DEFAULT false,
     department_id int REFERENCES departments(id),
-    status varchar(15) default 'not_define'
+    status varchar(15) default 'WAITING'
 );
 
 create table user_profiles

@@ -19,10 +19,10 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 
 import static com.example.mentoringapis.configurations.ConstantConfiguration.DEFAULT_SEMINAR_PAGE_SIZE;
-import static com.example.mentoringapis.utilities.DateTimeUtils.DEFAULT_DATE_TIME_FORMATTER;
-import static com.example.mentoringapis.utilities.DateTimeUtils.DEFAULT_DATE_TIME_PATTERN;
+import static com.example.mentoringapis.utilities.DateTimeUtils.*;
 
 @RestController
 @RequestMapping("/seminars")
@@ -33,6 +33,7 @@ public class SeminarController {
     //TODO fix default
     @GetMapping("/search")
     public ResponseEntity<CustomPagingResponse<SeminarResponse>> getAll(
+            @RequestParam(required = false) List<UUID> mentorIds,
             @RequestParam(required = false) String startDate, @RequestParam(required = false) String endDate,
             @RequestParam(required = false, defaultValue = "") String searchString,
             @RequestParam(required = false) Integer departmentId,
@@ -46,14 +47,9 @@ public class SeminarController {
             startDate = "1900-01-01";
             endDate = "2900-01-01";
         }
-        if ("past".equals(status)) {
-            endDate = DateTimeUtils.nowInVietnam().format(DateTimeFormatter.ofPattern(DEFAULT_DATE_TIME_PATTERN));
-        }else if( "future".equals(status)){
-            startDate = DateTimeUtils.nowInVietnam().format(DateTimeFormatter.ofPattern(DEFAULT_DATE_TIME_PATTERN));
-        }else {
-            endDate = DateTimeUtils.parseRoundDate(endDate).plusDays(1).format(DEFAULT_DATE_TIME_FORMATTER);
-        }
-        return ResponseEntity.ok(seminarService.searchByDateAndName(startDate,endDate,searchString, departmentId,status, PageRequest.of(pageIndex,pageSize)));
+
+        endDate = DateTimeUtils.parseStringToLocalDate(endDate).plusDays(1).format(DateTimeFormatter.ofPattern(DEFAULT_DATE_PATTERN));
+        return ResponseEntity.ok(seminarService.searchSeminars(startDate,endDate,searchString, departmentId,mentorIds,status, PageRequest.of(pageIndex,pageSize)));
     }
 
     @GetMapping("/{seminarId}")
@@ -64,6 +60,11 @@ public class SeminarController {
     @GetMapping("/byDepartment/{departmentId}")
     public ResponseEntity<List<SeminarResponse>> getByDepartmentId(@PathVariable int departmentId) throws ResourceNotFoundException {
         return ResponseEntity.ok(seminarService.getALlByDepartmentId(departmentId));
+    }
+
+    @GetMapping("/byMentor/{mentorId}")
+    public ResponseEntity<List<SeminarResponse>> getByMentorId(@PathVariable UUID mentorId) {
+        return ResponseEntity.ok(seminarService.getAllByMentorId(mentorId));
     }
 
     @GetMapping("/byMyDepartment")
@@ -87,13 +88,16 @@ public class SeminarController {
     }
 
     @PostMapping("/{seminarId}")
-    public ResponseEntity<SeminarResponse> create(@Valid @RequestBody UpdateSeminarRequest request, @PathVariable Long seminarId) throws ClientBadRequestError, ResourceNotFoundException {
-        return ResponseEntity.ok(seminarService.update(request, seminarId));
+    public ResponseEntity<SeminarResponse> update(@Valid @RequestBody UpdateSeminarRequest request, @PathVariable Long seminarId,
+                                                  Authentication authentication) throws ClientBadRequestError, ResourceNotFoundException {
+        var currentUser = (CustomUserDetails) authentication.getPrincipal();
+        return ResponseEntity.ok(seminarService.update(request, seminarId, currentUser.getDepartmentId()));
     }
 
     @DeleteMapping("{seminarId}")
-    public ResponseEntity<Long> delete(@PathVariable Long seminarId) throws ClientBadRequestError, ResourceNotFoundException {
-        return ResponseEntity.ok(seminarService.deleteSeminar(seminarId));
+    public ResponseEntity<Long> delete(@PathVariable Long seminarId, Authentication authentication) throws ClientBadRequestError, ResourceNotFoundException {
+        var currentUser = (CustomUserDetails) authentication.getPrincipal();
+        return ResponseEntity.ok(seminarService.deleteSeminar(seminarId, currentUser.getDepartmentId()));
     }
 
 

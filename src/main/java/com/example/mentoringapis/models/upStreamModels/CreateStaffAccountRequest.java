@@ -15,6 +15,7 @@ public class CreateStaffAccountRequest {
     private String email;
     private String fullName;
     private String avatarUrl;
+    private String phoneNumber;
     @NotNull
     private Integer departmentId;
 }

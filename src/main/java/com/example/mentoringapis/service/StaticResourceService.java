@@ -22,9 +22,7 @@ public class StaticResourceService {
     public String uploadImage(MultipartFile file) throws ClientBadRequestError, IOException {
         var blobName = IMAGE_RESOURCE_PATH.concat(UUID.randomUUID().toString());
         if(file.getContentType() == null || !file.getContentType().contains("image")){
-            throw ClientBadRequestError.builder()
-                    .errorMessages("File content type must be in image/* format")
-                    .build();
+            throw new ClientBadRequestError("File content type must be in image/* format");
         }
         Blob b = bucket.create(blobName, file.getBytes(), file.getContentType());
         return b.getMediaLink();

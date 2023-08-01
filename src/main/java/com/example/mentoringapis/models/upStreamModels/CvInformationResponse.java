@@ -3,7 +3,9 @@ package com.example.mentoringapis.models.upStreamModels;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.UUID;
@@ -11,7 +13,10 @@ import java.util.stream.IntStream;
 
 @Getter
 @Setter
+@NoArgsConstructor
 public class CvInformationResponse {
+
+
 
     String description;
 

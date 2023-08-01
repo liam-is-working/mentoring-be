@@ -24,12 +24,20 @@ public class DateTimeUtils {
 
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
+    public static String localDateTimeStringFromZone(ZonedDateTime zonedDateTime){
+        return LocalDateTime.ofInstant(zonedDateTime.toInstant(), DateTimeUtils.VIET_NAM_ZONE).format(DateTimeUtils.DEFAULT_DATE_TIME_FORMATTER);
+    }
+
     public static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat(DEFAULT_DATE_TIME_PATTERN);
 
     public static final ZoneId VIET_NAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     public static ZonedDateTime nowInVietnam(){
         return ZonedDateTime.now(VIET_NAM_ZONE);
+    }
+
+    public static LocalDateTime nowInVietnamLocalDateFormat(){
+        return LocalDateTime.ofInstant(nowInVietnam().toInstant(), VIET_NAM_ZONE);
     }
 
     public static LocalDateTime parseDate(String date) {

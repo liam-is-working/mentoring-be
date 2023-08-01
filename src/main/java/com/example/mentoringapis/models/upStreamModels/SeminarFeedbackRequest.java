@@ -63,13 +63,11 @@ public class SeminarFeedbackRequest implements Serializable{
             JSONAssert.assertEquals(om.readTree(template).at("/questions").toString(),
                     om.writeValueAsString(cloneResult), false);
         } catch (JSONException | AssertionError e) {
-            throw ClientBadRequestError.builder()
-                    .errorMessages(String.format("Wrong format regarding to the template\n" +
+            throw new ClientBadRequestError(String.format("Wrong format regarding to the template\n" +
                             "Diff: \n" +
                             "----------------\n" +
                             "%s\n" +
-                            "-----------------", e.getMessage()))
-                    .build();
+                            "-----------------", e.getMessage()));
         }
     }
 }

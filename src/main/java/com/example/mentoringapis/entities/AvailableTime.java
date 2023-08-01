@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -22,7 +23,7 @@ import static java.util.Optional.ofNullable;
 public class AvailableTime {
     @Id
     @Column(name = "id", nullable = false)
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY )
     private Long id;
 
     private String rrule;
@@ -46,16 +47,17 @@ public class AvailableTime {
     @OneToMany(mappedBy = "parent", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private Set<AvailableTimeException> availableTimeExceptionSet = new HashSet<>();
 
-    public Set<LocalDate> exceptionDates(){
-        return availableTimeExceptionSet.stream().map(AvailableTimeException::getExceptionDate).collect(Collectors.toSet());
+    public List<LocalDate> exceptionDates(){
+        return availableTimeExceptionSet.stream().map(AvailableTimeException::getExceptionDate).collect(Collectors.toList());
+    }
+    public List<LocalDateTime> exceptionDateTimes(){
+        return availableTimeExceptionSet.stream()
+                .filter(AvailableTimeException::isEnable)
+                .map(exc -> exc.getExceptionDate().atTime(exc.getStartTime())).collect(Collectors.toList());
     }
 
     public LocalDate endDate(){
-        return endDate==null?LocalDate.MAX:endDate;
-    }
-
-    public Optional<Recur<LocalDateTime>> recurRule(){
-        return ofNullable(rrule).map(r -> new Recur<>(rrule));
+        return endDate==null?LocalDate.MAX.minusYears(1):endDate;
     }
 
 }
