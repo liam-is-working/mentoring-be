@@ -2,11 +2,13 @@ package com.example.mentoringapis.controllers;
 
 import com.example.mentoringapis.entities.Account;
 import com.example.mentoringapis.errors.ClientBadRequestError;
+import com.example.mentoringapis.errors.MentoringAuthenticationError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.upStreamModels.*;
 import com.example.mentoringapis.security.CustomUserDetails;
 import com.example.mentoringapis.service.BookingService;
 import com.example.mentoringapis.service.UserProfileService;
+import com.example.mentoringapis.utilities.AuthorizationUtils;
 import com.example.mentoringapis.validation.EnumField;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -18,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static java.util.Optional.ofNullable;
@@ -49,8 +50,8 @@ public class BookingController {
 
     @CrossOrigin
     @PostMapping(produces = {"application/json"})
-    public ResponseEntity createBooking(Authentication authentication, @RequestBody CreateBookingRequest request) throws ResourceNotFoundException {
-        var currentUserId = ((CustomUserDetails) authentication.getPrincipal()).getAccount().getId();
+    public ResponseEntity createBooking(Authentication authentication, @RequestBody CreateBookingRequest request) throws ResourceNotFoundException, MentoringAuthenticationError {
+        var currentUserId = AuthorizationUtils.getCurrentUserUuid(authentication);
         try {
             bookingService.createBooking(request, currentUserId);
         } catch (ClientBadRequestError error) {
@@ -61,18 +62,18 @@ public class BookingController {
     }
 
     @PutMapping()
-    public ResponseEntity updateStatus(Authentication authentication, @RequestBody UpdateStatusRequest request) throws ResourceNotFoundException {
-        var account = ((CustomUserDetails) authentication.getPrincipal()).getAccount();
-        bookingService.updateBookingStatus(request, account.getId());
+    public ResponseEntity updateStatus(Authentication authentication, @RequestBody UpdateStatusRequest request) throws ResourceNotFoundException, MentoringAuthenticationError {
+        var currentUserId = AuthorizationUtils.getCurrentUserUuid(authentication);
+        bookingService.updateBookingStatus(request, currentUserId);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping()
-    public ResponseEntity getBooking(Authentication authentication){
-        var account = ((CustomUserDetails) authentication.getPrincipal()).getAccount();
+    public ResponseEntity getBooking(Authentication authentication) throws MentoringAuthenticationError {
+        var account = AuthorizationUtils.getCurrentUser(authentication);
         if(account.getRole().equals(Account.Role.MENTOR.name()))
-            return ResponseEntity.ok(bookingService.getMentorBooking(account.getId()));
-        return ResponseEntity.ok(bookingService.getMenteeBooking(account.getId()));
+            return ResponseEntity.ok(bookingService.getMentorBooking(account.getAccount().getId()));
+        return ResponseEntity.ok(bookingService.getMenteeBooking(account.getAccount().getId()));
     }
 
     @GetMapping("/{bookingId}")

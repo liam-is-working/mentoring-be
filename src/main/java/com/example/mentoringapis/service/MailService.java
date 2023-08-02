@@ -169,7 +169,7 @@ public class MailService {
                 .put("bookingDate", booking.bookDateAsString())
                 .put("startTime", booking.startTimeAsString())
                 .put("endTime", booking.endTimeAsString())
-                .put("detailLink", "https://studywithmentor-swm.web.app/booking/list")
+                .put("detailLink", "https://studywithmentor-swm.web.app/booking/details/"+booking.getId())
                 .put("allBookingLink", "https://studywithmentor-swm.web.app/booking/list")
                 .put("status", booking.getStatus());
     }
@@ -236,16 +236,22 @@ public class MailService {
 
 
     //TODO store question position
-    private String getMentorConnectCountFromReportStatistic(String mentorName, Object report){
-        var searchString = String.format(MENTOR_CONNECTING_QUESTION_FORMAT, mentorName);
+    private String getMentorConnectCountFromReportStatistic(UserProfile mentor, Object report, String form){
+        var searchNameJPath = String.format("$.metaData[?(@.id == '%s')].fullName", mentor.getAccountId());
+        List<String> searchName = JsonPath.read(form, searchNameJPath);
+
+        var searchString = String.format(MENTOR_CONNECTING_QUESTION_FORMAT, searchName.get(0));
         var jpath = String.format("$[?(@.question == '%s')].statistics", searchString);
         List<Object> statistics = JsonPath.read(report, jpath);
         var statistic = om.convertValue(statistics.get(0), Map.class);
         return String.valueOf(statistic.get("Yes"));
     }
 
-    private String getMentorRatingFromReportStatistic(String mentorName, Object report){
-        var searchString = String.format(MENTOR_RATING_QUESTION_FORMAT, mentorName);
+    private String getMentorRatingFromReportStatistic(UserProfile mentor, Object report, String form){
+        var searchNameJPath = String.format("$.metaData[?(@.id == '%s')].fullName", mentor.getAccountId());
+        List<String> searchName = JsonPath.read(form, searchNameJPath);
+
+        var searchString = String.format(MENTOR_RATING_QUESTION_FORMAT, searchName.get(0));
         var jpath = String.format("$[?(@.question == '%s')].statistics", searchString);
         List<Object> statistics = JsonPath.read(report, jpath);
         var statistic = om.convertValue(statistics.get(0), SeminarFeedbackReportResponse.RatingStatistic.class);
@@ -256,15 +262,17 @@ public class MailService {
         return new JSONObject()
                 .put("fullName", mentor.getUserProfile().getFullName())
                 .put("seminarName", seminar.getName())
-                .put("wantToConnect", getMentorConnectCountFromReportStatistic(mentor.getUserProfile().getFullName(), reportResponse.getReportStatistic()))
-                .put("rating", getMentorRatingFromReportStatistic(mentor.getUserProfile().getFullName(), reportResponse.getReportStatistic()))
+                .put("wantToConnect", getMentorConnectCountFromReportStatistic(mentor.getUserProfile(), reportResponse.getReportStatistic(), seminar.getFeedbackForm()))
+                .put("rating", getMentorRatingFromReportStatistic(mentor.getUserProfile(), reportResponse.getReportStatistic(), seminar.getFeedbackForm()))
                 .put("feedbackLink", String.format("https://studywithmentor-swm.web.app/feedback-overview/%s", seminar.getId()))
                 .put("loginLink", "https://studywithmentor-swm.web.app/");
     }
 
-    public void sendInvitationEmail(UUID mentorId) throws ResourceNotFoundException, MailjetException {
-        var mentor = userProfileRepository.findUserProfileByAccount_Id(mentorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cannot found profile"));
+    public void sendInvitationEmail(UUID mentorId) {
+        var mentorOptional = userProfileRepository.findUserProfileByAccount_Id(mentorId);
+        if(mentorOptional.isEmpty())
+            return;
+        var mentor = mentorOptional.get();
         var request = new MailjetRequest(Emailv31.resource)
                 .property(Emailv31.MESSAGES, new JSONArray()
                         .put(new JSONObject()
@@ -282,7 +290,11 @@ public class MailService {
                                 )
                         )
                 );
-        mailjetClient.post(request);
+        try {
+            mailjetClient.post(request);
+        } catch (MailjetException e) {
+            log.error("Mail exception",e);
+        }
     }
 
     public JSONObject generateVariableForMentorInvitation(UserProfile mentorProfile){

@@ -8,5 +8,4 @@ public class UpdateTopicRequest {
     String description;
     Long fieldId;
     Long categoryId;
-    String money;
 }

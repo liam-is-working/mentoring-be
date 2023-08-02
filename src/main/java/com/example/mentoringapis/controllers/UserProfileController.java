@@ -1,13 +1,13 @@
 package com.example.mentoringapis.controllers;
 
+import com.example.mentoringapis.errors.MentoringAuthenticationError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.upStreamModels.*;
 import com.example.mentoringapis.security.CustomUserDetails;
 import com.example.mentoringapis.service.UserProfileService;
+import com.example.mentoringapis.utilities.AuthorizationUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
-import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -25,8 +25,8 @@ public class UserProfileController {
     private final UserProfileService userProfileService;
 
     @PostMapping(path = "/current")
-    public UserProfileResponse updateProfile(@Valid @RequestBody UserProfileUpdateRequest request, Authentication authentication){
-        var currentUser = (CustomUserDetails) authentication.getPrincipal();
+    public UserProfileResponse updateProfile(@Valid @RequestBody UserProfileUpdateRequest request, Authentication authentication) throws MentoringAuthenticationError {
+        var currentUser = AuthorizationUtils.getCurrentUser(authentication);
         var result = userProfileService.update(request, currentUser.getAccount().getId());
         result.setRole(currentUser.getRole());
         return result;
@@ -45,15 +45,15 @@ public class UserProfileController {
     }
 
     @RequestMapping(path = "/current/cv", method = RequestMethod.POST)
-    public CvInformationResponse updateMyCv(Authentication authentication, @Valid @RequestBody CvInformationUpdateRequest cv) throws JsonProcessingException {
-        var currentUser = (CustomUserDetails) authentication.getPrincipal();
-        return userProfileService.updateCv(cv, currentUser.getAccount().getId());
+    public CvInformationResponse updateMyCv(Authentication authentication, @Valid @RequestBody CvInformationUpdateRequest cv) throws JsonProcessingException, MentoringAuthenticationError {
+        var currentUser = AuthorizationUtils.getCurrentUserUuid(authentication);
+        return userProfileService.updateCv(cv, currentUser);
     }
 
     @RequestMapping(path = "/current/cv", method = RequestMethod.GET)
-    public CvInformationResponse getCv(Authentication authentication){
-        var currentUser = (CustomUserDetails) authentication.getPrincipal();
-        return userProfileService.getCvResponseByUUID(currentUser.getAccount().getId());
+    public CvInformationResponse getCv(Authentication authentication) throws MentoringAuthenticationError {
+        var currentUser = AuthorizationUtils.getCurrentUserUuid(authentication);
+        return userProfileService.getCvResponseByUUID(currentUser);
     }
 
     @GetMapping(path = "/{id}")
@@ -79,17 +79,17 @@ public class UserProfileController {
 
 
     @PostMapping("/follow")
-    public ResponseEntity follow(Authentication authentication, @RequestParam(value = "mentor") UUID mentorId){
-        var currentUser = (CustomUserDetails) authentication.getPrincipal();
-        CompletableFuture.runAsync(() -> userProfileService.follow(mentorId, currentUser.getAccount().getId()));
+    public ResponseEntity follow(Authentication authentication, @RequestParam(value = "mentor") UUID mentorId) throws MentoringAuthenticationError {
+        var currentUser = AuthorizationUtils.getCurrentUserUuid(authentication);
+        CompletableFuture.runAsync(() -> userProfileService.follow(mentorId, currentUser));
 //        userProfileService.follow(mentorId, currentUser.getAccount().getId());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/unfollow")
-    public ResponseEntity unfollow(Authentication authentication, @RequestParam(value = "mentor") UUID mentorId){
-        var currentUser = (CustomUserDetails) authentication.getPrincipal();
-        CompletableFuture.runAsync(() -> userProfileService.unfollow(mentorId, currentUser.getAccount().getId()));
+    public ResponseEntity unfollow(Authentication authentication, @RequestParam(value = "mentor") UUID mentorId) throws MentoringAuthenticationError {
+        var currentUser = AuthorizationUtils.getCurrentUserUuid(authentication);
+        CompletableFuture.runAsync(() -> userProfileService.unfollow(mentorId, currentUser));
 //        userProfileService.follow(mentorId, currentUser.getAccount().getId());
         return ResponseEntity.ok().build();
     }
@@ -100,8 +100,8 @@ public class UserProfileController {
     }
 
     @GetMapping(path = "/current")
-    public UserProfileResponse getCurrentUser(Authentication authentication){
-        var currentUser = (CustomUserDetails) authentication.getPrincipal();
+    public UserProfileResponse getCurrentUser(Authentication authentication) throws MentoringAuthenticationError {
+        var currentUser = AuthorizationUtils.getCurrentUser(authentication);
         var result = userProfileService.findByUUID(currentUser.getAccount().getId());
         result.setRole(currentUser.getRole());
         return result;

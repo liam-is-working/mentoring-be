@@ -18,7 +18,6 @@ public class Topic {
     private Long id;
 
     private String name;
-    private String money;
     private String description;
     private String status;
 

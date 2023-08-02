@@ -23,7 +23,7 @@ public class FirebaseConfiguration {
 
         FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                .setStorageBucket("growth-me-381908.appspot.com")
+                .setStorageBucket("growthme")
                 .build();
 
         return FirebaseApp.initializeApp(options);

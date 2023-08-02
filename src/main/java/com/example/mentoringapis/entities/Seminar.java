@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -29,6 +31,10 @@ public class Seminar implements Comparable{
     private String imageUrl;
     private String attachmentUrl;
     private LocalDateTime startTime;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "feedback_form")
+    private String feedbackForm;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id")

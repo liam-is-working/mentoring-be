@@ -91,8 +91,8 @@ public class BookingService {
 
     public void acceptBooking(Iterable<Booking> bookings) {
         bookings.forEach(b -> {
-            if(Booking.Status.REQUESTED.name().equals(b.getStatus()))
-                return;
+//            if(!Booking.Status.REQUESTED.name().equals(b.getStatus()))
+//                return;
 
             b.setStatus(Booking.Status.ACCEPTED.name());
             sendBookingReminderEmail(List.of(b.getId()));
@@ -119,9 +119,7 @@ public class BookingService {
     }
 
     public void sendUpdateBookingEmail(List<Long> bookingIds){
-        bookingIds.forEach(b -> {
-            CompletableFuture.runAsync(() -> mailService.sendBookingMail(b));
-        });
+        bookingIds.forEach(mailService::sendBookingMail);
     }
 
 
@@ -129,7 +127,7 @@ public class BookingService {
         switch (Booking.Status.valueOf(request.getStatus())) {
             case ACCEPTED: {
                 acceptBooking(bookingRepository.findAllById(request.getBookingIds()));
-                sendUpdateBookingEmail(request.getBookingIds());
+                CompletableFuture.runAsync(() -> sendUpdateBookingEmail(request.getBookingIds()));
                 break;
             }
             case REJECTED: {

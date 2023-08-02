@@ -1,4 +1,12 @@
 {
+    "metaData": [
+        {% for mentor in mentorNames %}
+        {
+             "id": "{{ mentor.id }}",
+             "fullName": "{{ mentor.fullName }}"
+        }{%if not loop.last %},{% endif %}
+        {% endfor %}
+    ],
     "questions":[
         {
             "id": 1,
@@ -20,15 +28,15 @@
             "question":"Bạn đánh giá thế nào về mặt tổ chức và hậu cần của sự kiện?",
             "type": "RATING"
         },
-        {% for name in mentorNames %}
+        {% for mentor in mentorNames %}
         {
              "id": {{ 5 + 2*loop.index }},
-             "question":"Bạn đánh giá thế nào về chất lượng và chuyên môn của diễn giả {{ name }}",
+             "question":"Bạn đánh giá thế nào về chất lượng và chuyên môn của diễn giả {{ mentor.fullName }}",
              "type": "RATING"
         },
         {
             "id": {{ 6 + 2*loop.index }},
-             "question":"Bạn có muốn được kết nối với diễn giả {{ name }} sau buổi seminar này không?",
+             "question":"Bạn có muốn được kết nối với diễn giả {{ mentor.fullName }} sau buổi seminar này không?",
              "type": "YES/NO"
         },
         {% endfor %}

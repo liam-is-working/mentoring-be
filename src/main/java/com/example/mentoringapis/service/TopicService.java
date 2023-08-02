@@ -42,7 +42,6 @@ public class TopicService {
         newTopic.setField(topicField.get());
         newTopic.setMentor(owner.get().getUserProfile());
         newTopic.setName(request.getName());
-        newTopic.setMoney(request.getMoney());
         newTopic.setDescription(request.getDescription());
         newTopic.setStatus(Topic.Status.WAITING.name());
 
@@ -73,7 +72,6 @@ public class TopicService {
 
         Optional.ofNullable(request.getName()).ifPresent(topicToUpdate::setName);
         Optional.ofNullable(request.getDescription()).ifPresent(topicToUpdate::setDescription);
-        Optional.ofNullable(request.getMoney()).ifPresent(topicToUpdate::setMoney);
         topicToUpdate.setStatus(Topic.Status.WAITING.name());
 
         topicRepository.save(topicToUpdate);

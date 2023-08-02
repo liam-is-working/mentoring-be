@@ -1,6 +1,7 @@
 package com.example.mentoringapis.controllers;
 
 import com.example.mentoringapis.errors.ClientBadRequestError;
+import com.example.mentoringapis.errors.MentoringAuthenticationError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.paging.CustomPagingResponse;
 import com.example.mentoringapis.models.upStreamModels.CreateSeminarRequest;
@@ -8,6 +9,7 @@ import com.example.mentoringapis.models.upStreamModels.SeminarResponse;
 import com.example.mentoringapis.models.upStreamModels.UpdateSeminarRequest;
 import com.example.mentoringapis.security.CustomUserDetails;
 import com.example.mentoringapis.service.SeminarService;
+import com.example.mentoringapis.utilities.AuthorizationUtils;
 import com.example.mentoringapis.utilities.DateTimeUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -68,35 +70,31 @@ public class SeminarController {
     }
 
     @GetMapping("/byMyDepartment")
-    public ResponseEntity<List<SeminarResponse>> getByMyDepartment(Authentication authentication) throws ResourceNotFoundException {
-        var currentUser = (CustomUserDetails) authentication.getPrincipal();
+    public ResponseEntity<List<SeminarResponse>> getByMyDepartment(Authentication authentication) throws ResourceNotFoundException, MentoringAuthenticationError {
+        var currentUser = AuthorizationUtils.getCurrentUser(authentication);
         return ResponseEntity.ok(seminarService.getALlByDepartmentId(currentUser.getDepartmentId()));
     }
 
 //    @Secured("STAFF") TODO:authorize
     @PostMapping
-    public ResponseEntity<SeminarResponse> create(@Valid @RequestBody CreateSeminarRequest request, Authentication authentication) throws ClientBadRequestError, IOException {
-//        var currentUser = (CustomUserDetails) authentication.getPrincipal();
-//        return ResponseEntity.ok(seminarService.create(request, currentUser.getDepartmentId()));
-
-        if(authentication != null){
-            var currentUser = (CustomUserDetails) authentication.getPrincipal();
-            return ResponseEntity.ok(seminarService.create(request, currentUser.getDepartmentId()));
-        }else {
-            return ResponseEntity.ok(seminarService.create(request, null));
+    public ResponseEntity<SeminarResponse> create(@Valid @RequestBody CreateSeminarRequest request, Authentication authentication) throws ClientBadRequestError, IOException, MentoringAuthenticationError {
+        var currentUser = AuthorizationUtils.getCurrentUser(authentication);
+        if(request.getDepartmentId()!=null){
+            return ResponseEntity.ok(seminarService.create(request, request.getDepartmentId()));
         }
+        return ResponseEntity.ok(seminarService.create(request, currentUser.getDepartmentId()));
     }
 
     @PostMapping("/{seminarId}")
     public ResponseEntity<SeminarResponse> update(@Valid @RequestBody UpdateSeminarRequest request, @PathVariable Long seminarId,
-                                                  Authentication authentication) throws ClientBadRequestError, ResourceNotFoundException {
-        var currentUser = (CustomUserDetails) authentication.getPrincipal();
+                                                  Authentication authentication) throws ClientBadRequestError, ResourceNotFoundException, MentoringAuthenticationError {
+        var currentUser = AuthorizationUtils.getCurrentUser(authentication);
         return ResponseEntity.ok(seminarService.update(request, seminarId, currentUser.getDepartmentId()));
     }
 
     @DeleteMapping("{seminarId}")
-    public ResponseEntity<Long> delete(@PathVariable Long seminarId, Authentication authentication) throws ClientBadRequestError, ResourceNotFoundException {
-        var currentUser = (CustomUserDetails) authentication.getPrincipal();
+    public ResponseEntity<Long> delete(@PathVariable Long seminarId, Authentication authentication) throws ClientBadRequestError, ResourceNotFoundException, MentoringAuthenticationError {
+        var currentUser = AuthorizationUtils.getCurrentUser(authentication);
         return ResponseEntity.ok(seminarService.deleteSeminar(seminarId, currentUser.getDepartmentId()));
     }
 

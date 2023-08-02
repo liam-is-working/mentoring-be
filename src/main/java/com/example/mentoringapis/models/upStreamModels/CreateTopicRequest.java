@@ -8,5 +8,4 @@ public class CreateTopicRequest {
     String description;
     Long fieldId;
     Long categoryId;
-    String money;
 }

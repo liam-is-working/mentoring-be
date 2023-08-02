@@ -17,9 +17,12 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
 import lombok.RequiredArgsConstructor;
+import org.jobrunr.scheduling.BackgroundJob;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,6 +34,7 @@ public class AuthService {
     private final AccountsRepository accountsRepository;
     private final DepartmentRepository departmentRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final MailService mailService;
     private final FirebaseAuth firebaseAuth;
     private final FireStoreService fireStoreService;
 
@@ -134,6 +138,9 @@ public class AuthService {
         var newMentorAccount = createNewAccountAndProfile(request.getEmail(),
                 request.getFullName(), request.getAvatarUrl(), Account.Role.MENTOR,
                 null, request.getPhoneNumber());
+
+        var newMentorUUID = newMentorAccount.getId();
+        BackgroundJob.schedule(Instant.now().plus(1, ChronoUnit.MINUTES), () -> mailService.sendInvitationEmail(newMentorUUID));
         return MentorAccountResponse.fromAccountEntity(newMentorAccount);
     }
 

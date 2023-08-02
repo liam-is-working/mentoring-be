@@ -88,8 +88,20 @@ public class FeedbackService {
 
     public Object getFeedbackForm(Long seminarId) throws IOException, ResourceNotFoundException {
         var seminar = getSeminarById(seminarId);
-        var sortedMentorNames = seminar.mentorNames().stream().sorted().collect(Collectors.toList());
-        return templateService.render("form_1", Map.of("mentorNames", sortedMentorNames));
+
+        Object form;
+        if(Strings.isBlank(seminar.getFeedbackForm())){
+            var sortedMentorNames = seminar.getMentors().stream()
+                    .map(m -> Map.of("id", m.getAccountId(),
+                            "fullName", m.getFullName()))
+                    .collect(Collectors.toList());
+            form = templateService.render("form_1", Map.of("mentorNames", sortedMentorNames));
+            seminar.setFeedbackForm(om.writeValueAsString(form));
+            seminarRepository.save(seminar);
+        }
+
+        return om.readValue(seminar.getFeedbackForm(), Object.class);
+
     }
 
     public void initiateFeedback(Seminar seminar) throws IOException {
@@ -111,15 +123,8 @@ public class FeedbackService {
 
     public void updateFeedback(Long seminarId, SeminarFeedbackRequest feedbackResult) throws ResourceNotFoundException, IOException, ClientBadRequestError {
         var seminar = getSeminarById(seminarId);
-        var sortedMentorNames = seminar.mentorNames().stream().sorted().collect(Collectors.toList());
-        var template = templateService.renderAsString("form_1", Map.of("mentorNames", sortedMentorNames));
+        var template = seminar.getFeedbackForm();
         feedbackResult.validate(template, om);
-//        var resultNode = om.valueToTree(feedbackResult);
-
-        //TODO create type
-//        var feedbackNode = om.createObjectNode();
-//        feedbackNode.put("results", om.writeValueAsString(feedbackResult));
-//        feedbackNode.set("metadata", om.createObjectNode());
 
         var tempMap = Map.of(
                 "results", om.writeValueAsString(feedbackResult.getResults())

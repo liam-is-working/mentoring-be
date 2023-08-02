@@ -1,11 +1,12 @@
 package com.example.mentoringapis.controllers;
 
+import com.example.mentoringapis.errors.MentoringAuthenticationError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.upStreamModels.CreateTopicRequest;
 import com.example.mentoringapis.models.upStreamModels.TopicDetailResponse;
 import com.example.mentoringapis.models.upStreamModels.UpdateTopicRequest;
-import com.example.mentoringapis.security.CustomUserDetails;
 import com.example.mentoringapis.service.TopicService;
+import com.example.mentoringapis.utilities.AuthorizationUtils;
 import com.example.mentoringapis.validation.EnumField;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
@@ -32,15 +33,15 @@ public class TopicController {
     }
 
     @PostMapping()
-    public ResponseEntity<TopicDetailResponse> createTopic(@RequestBody CreateTopicRequest topicRequest, Authentication authentication) throws ResourceNotFoundException {
-        var currentUser = (CustomUserDetails) authentication.getPrincipal();
-        return ResponseEntity.ok(topicService.createTopic(topicRequest, currentUser.getAccount().getId()));
+    public ResponseEntity<TopicDetailResponse> createTopic(@RequestBody CreateTopicRequest topicRequest, Authentication authentication) throws ResourceNotFoundException, MentoringAuthenticationError {
+        var currentUuid = AuthorizationUtils.getCurrentUserUuid(authentication);
+        return ResponseEntity.ok(topicService.createTopic(topicRequest, currentUuid));
     }
 
     @PostMapping("/{topicId}")
-    public ResponseEntity<TopicDetailResponse> editTopic(@RequestBody UpdateTopicRequest topicRequest, Authentication authentication, @PathVariable Long topicId) throws ResourceNotFoundException {
-        var currentUser = (CustomUserDetails) authentication.getPrincipal();
-        return ResponseEntity.ok(topicService.editTopic(topicRequest, currentUser.getAccount().getId(), topicId));
+    public ResponseEntity<TopicDetailResponse> editTopic(@RequestBody UpdateTopicRequest topicRequest, Authentication authentication, @PathVariable Long topicId) throws ResourceNotFoundException, MentoringAuthenticationError {
+        var currentUuid = AuthorizationUtils.getCurrentUserUuid(authentication);
+        return ResponseEntity.ok(topicService.editTopic(topicRequest, currentUuid, topicId));
     }
 
     @PostMapping("/update-status")

@@ -77,8 +77,8 @@ public class SeminarService {
         var seminarOptional = seminarRepository.findById(seminarId);
         var seminar = seminarOptional.orElseThrow(() ->  new ResourceNotFoundException(String.format("Cannot find seminar with id: %s", seminarId)));
 
-        if(seminar.getDepartment()==null || departmentId==null || seminar.getDepartment().getId() != departmentId)
-            throw new ClientBadRequestError("Staff doesnt belong to seminar's department");
+//        if(seminar.getDepartment()==null || departmentId==null || seminar.getDepartment().getId() != departmentId)
+//            throw new ClientBadRequestError("Staff doesnt belong to seminar's department");
         seminarRepository.delete(seminar);
         return seminarId;
 
@@ -88,8 +88,8 @@ public class SeminarService {
         var currentSeminar = seminarRepository.findById(seminarId)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Cannot find Seminar with id: %s", seminarId)));
 
-        if(currentSeminar.getDepartment()==null || departmentId==null || currentSeminar.getDepartment().getId() != departmentId)
-            throw new ClientBadRequestError("Staff doesnt belong to seminar's department");
+//        if(currentSeminar.getDepartment()==null || departmentId==null || currentSeminar.getDepartment().getId() != departmentId)
+//            throw new ClientBadRequestError("Staff doesnt belong to seminar's department");
 
         Set<UserProfile> mentorProfiles = getMentorProfiles(request.getMentorIds());
         ofNullable(mentorProfiles).ifPresent(currentSeminar::setMentors);
@@ -140,7 +140,7 @@ public class SeminarService {
         }
         seminarRepository.save(newSeminar);
         fireStoreService.createDiscussionRoom(newSeminar.getId());
-        feedbackService.initiateFeedback(newSeminar);
+//        feedbackService.initiateFeedback(newSeminar);
         return SeminarResponse.fromSeminarEntity(newSeminar);
     }
 

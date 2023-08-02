@@ -1,12 +1,14 @@
 package com.example.mentoringapis.controllers;
 
 import com.example.mentoringapis.errors.ClientBadRequestError;
+import com.example.mentoringapis.errors.MentoringAuthenticationError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.upStreamModels.CreateMeetingFeedbackRequest;
 import com.example.mentoringapis.models.upStreamModels.MeetingFeedbackResponse;
 import com.example.mentoringapis.models.upStreamModels.UpdateMeetingFeedbackRequest;
 import com.example.mentoringapis.security.CustomUserDetails;
 import com.example.mentoringapis.service.MeetingFeedbackService;
+import com.example.mentoringapis.utilities.AuthorizationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -23,14 +25,14 @@ public class MeetingFeedbackController {
 
 
     @PostMapping("/{bookingId}")
-    public ResponseEntity<MeetingFeedbackResponse.MeetingFeedbackCard> createFeedback(Authentication authentication, @PathVariable Long bookingId, @RequestBody CreateMeetingFeedbackRequest request) throws ResourceNotFoundException {
-        var currentUserId = ((CustomUserDetails) authentication.getPrincipal()).getAccount().getId();
+    public ResponseEntity<MeetingFeedbackResponse.MeetingFeedbackCard> createFeedback(Authentication authentication, @PathVariable Long bookingId, @RequestBody CreateMeetingFeedbackRequest request) throws ResourceNotFoundException, MentoringAuthenticationError {
+        var currentUserId = AuthorizationUtils.getCurrentUserUuid(authentication);
         return ResponseEntity.ok(meetingFeedbackService.createFeedback(request, bookingId, currentUserId));
     }
 
     @PutMapping("/{feedbackId}")
-    public ResponseEntity<MeetingFeedbackResponse.MeetingFeedbackCard> editFeedback(Authentication authentication, @PathVariable Long feedbackId, @RequestBody UpdateMeetingFeedbackRequest request) throws ResourceNotFoundException, ClientBadRequestError {
-        var currentUserId = ((CustomUserDetails) authentication.getPrincipal()).getAccount().getId();
+    public ResponseEntity<MeetingFeedbackResponse.MeetingFeedbackCard> editFeedback(Authentication authentication, @PathVariable Long feedbackId, @RequestBody UpdateMeetingFeedbackRequest request) throws ResourceNotFoundException, ClientBadRequestError, MentoringAuthenticationError {
+        var currentUserId = AuthorizationUtils.getCurrentUserUuid(authentication);
         return ResponseEntity.ok(meetingFeedbackService.editFeedback(request, currentUserId, feedbackId));
     }
 

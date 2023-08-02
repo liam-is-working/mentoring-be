@@ -22,6 +22,7 @@ public class CreateSeminarRequest {
     private String description;
     private String location;
     private String imageUrl;
+    private Integer departmentId;
     private Set<String> attachmentUrls;
     @CheckStringDate(format = DEFAULT_DATE_TIME_PATTERN)
     @NotNull
