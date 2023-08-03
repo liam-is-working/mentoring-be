@@ -3,6 +3,7 @@ package com.example.mentoringapis.models.upStreamModels;
 import com.example.mentoringapis.entities.Account;
 import com.example.mentoringapis.entities.Department;
 import com.example.mentoringapis.entities.Seminar;
+import com.example.mentoringapis.utilities.DateTimeUtils;
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,7 +18,8 @@ import java.util.stream.Collectors;
 public class DepartmentResponse {
     private int id;
     private String name;
-    private LocalDateTime createdAt;
+    private String createdDate;
+    private String updatedDate;
     private Set<UUID> staffIds;
     private Set<Long> seminarIds;
     private Set<UserProfileResponse> staffs;
@@ -25,7 +27,8 @@ public class DepartmentResponse {
     public static DepartmentResponse fromDepartment(Department department){
         return DepartmentResponse.builder()
                 .id(department.getId())
-                .createdAt(department.getCreatedAt())
+                .createdDate(DateTimeUtils.localDateTimeStringFromZone(department.getCreatedAt()))
+                .updatedDate(DateTimeUtils.localDateTimeStringFromZone(department.getUpdatedDate()))
                 .name(department.getName())
                 .seminarIds(department.getSeminars().stream().map(Seminar::getId).collect(Collectors.toSet()))
                 .staffIds(department.getStaffAccounts().stream().map(Account::getId).collect(Collectors.toSet()))

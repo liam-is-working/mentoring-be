@@ -4,6 +4,7 @@ import com.example.mentoringapis.entities.Department;
 import com.example.mentoringapis.entities.Seminar;
 import com.example.mentoringapis.entities.UserProfile;
 import com.example.mentoringapis.service.StaticResourceService;
+import com.example.mentoringapis.utilities.DateTimeUtils;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -32,6 +33,8 @@ public class SeminarResponse {
     private String imageUrl;
     private String imageLink;
     private String startTime;
+    private String createdDate;
+    private String updatedDate;
     private Set<MentorAccountResponse> mentors;
     private DepartmentRes department;
     private String status;
@@ -82,6 +85,8 @@ public class SeminarResponse {
                 .attachmentUrls(attachmentUrls)
                 .attachments(attachmentMaps)
                 .name(seminarEntity.getName())
+                .createdDate(DateTimeUtils.localDateTimeStringFromZone(seminarEntity.getCreatedDate()))
+                .updatedDate(DateTimeUtils.localDateTimeStringFromZone(seminarEntity.getUpdatedDate()))
                 .location(seminarEntity.getLocation())
                 .startTime(seminarEntity.getStartTime().format(DEFAULT_DATE_TIME_FORMATTER))
                 .status(getStatus(seminarEntity.getStartTime()).name())

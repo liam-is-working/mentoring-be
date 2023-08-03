@@ -1,5 +1,6 @@
 package com.example.mentoringapis.entities;
 
+import com.example.mentoringapis.utilities.DateTimeUtils;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,6 +20,20 @@ public class MeetingFeedback {
     private String content;
     private ZonedDateTime latestDate;
     private int rating;
+    private ZonedDateTime createdDate;
+
+    private ZonedDateTime updatedDate;
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+    }
+
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "booking_id")

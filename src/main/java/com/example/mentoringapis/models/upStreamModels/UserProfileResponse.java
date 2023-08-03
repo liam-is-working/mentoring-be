@@ -4,6 +4,7 @@ import com.example.mentoringapis.entities.Department;
 import com.example.mentoringapis.entities.MeetingFeedback;
 import com.example.mentoringapis.entities.UserProfile;
 import com.example.mentoringapis.service.StaticResourceService;
+import com.example.mentoringapis.utilities.DateTimeUtils;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
@@ -25,6 +26,8 @@ public class UserProfileResponse {
     private String fullName;
     private String description;
     private String dob;
+    private String createdDate;
+    private String updatedDate;
     private String gender;
     private String phone;
     private String email;
@@ -55,12 +58,14 @@ public class UserProfileResponse {
                 .followers(userProfile.getFollowers().size())
                 .ratingOptional(userProfile.getFeedbacks().stream().mapToInt(MeetingFeedback::getRating).average())
                 .id(userProfile.getAccountId().toString())
-                .departmentName(Optional.ofNullable(userProfile.getAccount().getDepartment()).map(Department::getName).orElse(null))
-                .departmentId(Optional.ofNullable(userProfile.getAccount().getDepartment()).map(Department::getId).orElse(null))
+                .departmentName(ofNullable(userProfile.getAccount().getDepartment()).map(Department::getName).orElse(null))
+                .departmentId(ofNullable(userProfile.getAccount().getDepartment()).map(Department::getId).orElse(null))
                 .phone(userProfile.getPhoneNum())
                 .email(userProfile.getAccount().getEmail())
                 .status(userProfile.getAccount().getStatus())
                 .description(userProfile.getDescription())
+                .createdDate(DateTimeUtils.localDateTimeStringFromZone(userProfile.getCreatedDate()))
+                .updatedDate(DateTimeUtils.localDateTimeStringFromZone(userProfile.getUpdatedDate()))
                 .accountId(userProfile.getAccountId().toString())
                 .avatarUrl(userProfile.getAvatarUrl())
                 .role(userProfile.getAccount().getRole())
@@ -80,6 +85,8 @@ public class UserProfileResponse {
                 .phone(userProfile.getPhoneNum())
                 .email(userProfile.getAccount().getEmail())
                 .status(userProfile.getAccount().getStatus())
+                .createdDate(DateTimeUtils.localDateTimeStringFromZone(userProfile.getCreatedDate()))
+                .updatedDate(DateTimeUtils.localDateTimeStringFromZone(userProfile.getUpdatedDate()))
                 .description(userProfile.getDescription())
                 .accountId(userProfile.getAccountId().toString())
                 .avatarUrl(userProfile.getAvatarUrl())

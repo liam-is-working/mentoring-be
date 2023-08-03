@@ -31,6 +31,17 @@ public class AdminController {
     private final BookingService bookingService;
     private final TopicFieldCategoryService topicFieldCategoryService;
     private final AuthService authService;
+    private final AppConfigService appConfigService;
+
+    @GetMapping("/configs")
+    public ResponseEntity<List<AppConfigResponse>> getConfigs(){
+        return ResponseEntity.ok(appConfigService.getAll());
+    }
+
+    @PostMapping("/configs")
+    public ResponseEntity<AppConfigResponse> createNewConfig(@RequestBody AppConfigRequest appConfigRequest){
+        return ResponseEntity.ok(appConfigService.createNewAppConfig(appConfigRequest));
+    }
 
     @GetMapping("/accounts")
     public ResponseEntity<List<AccountResponse>> getAccounts(){

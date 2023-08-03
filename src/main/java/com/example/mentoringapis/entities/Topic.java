@@ -1,8 +1,11 @@
 package com.example.mentoringapis.entities;
 
+import com.example.mentoringapis.utilities.DateTimeUtils;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.ZonedDateTime;
 
 @Entity
 @Getter
@@ -20,6 +23,18 @@ public class Topic {
     private String name;
     private String description;
     private String status;
+    private ZonedDateTime createdDate;
+    private ZonedDateTime updatedDate;
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+    }
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)

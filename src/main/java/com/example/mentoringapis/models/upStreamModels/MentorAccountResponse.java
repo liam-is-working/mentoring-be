@@ -29,19 +29,20 @@ public class MentorAccountResponse {
     private String createdDate;
     private String avatarUrl;
     private String avatarLink;
+    private String updatedDate;
 
     public static MentorAccountResponse fromAccountEntity(Account account){
-        var createdDate = account.getCreatedDate().withZoneSameInstant(VIET_NAM_ZONE).toLocalDateTime();
         return MentorAccountResponse.builder()
                 .id(account.getId())
                 .email(account.getEmail())
+                .updatedDate(DateTimeUtils.localDateTimeStringFromZone(account.getUpdatedDate()))
                 .role(account.getRole())
                 .avatarUrl(account.getUserProfile().getAvatarUrl())
                 .avatarLink(account.getUserProfile().getAvatarUrl())
                 .status(account.getStatus())
                 .phoneNum(account.getUserProfile().getPhoneNum())
                 .fullName(account.getUserProfile().getFullName())
-                .createdDate(createdDate.format(DateTimeFormatter.ofPattern(DateTimeUtils.DEFAULT_DATE_TIME_PATTERN)))
+                .createdDate(DateTimeUtils.localDateTimeStringFromZone(account.getCreatedDate()))
                 .build();
     }
 }

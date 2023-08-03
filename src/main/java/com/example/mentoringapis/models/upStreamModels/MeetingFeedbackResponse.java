@@ -20,6 +20,8 @@ public class MeetingFeedbackResponse {
         private String content;
         private int rating;
         private String feedbackDate;
+        private String createdDate;
+        private String updatedDate;
         private UserProfileResponse receiver;
         private UserProfileResponse giver;
         private BookingListResponse.BookingCard bookingCard;
@@ -30,6 +32,8 @@ public class MeetingFeedbackResponse {
                     .receiver(UserProfileResponse.fromUserProfile(entity.getReceiver()))
                     .giver(UserProfileResponse.fromUserProfile(entity.getGiver()))
                     .id(entity.getId())
+                    .createdDate(localDateTimeStringFromZone(entity.getCreatedDate()))
+                    .updatedDate(localDateTimeStringFromZone(entity.getUpdatedDate()))
                     .content(entity.getContent())
                     .rating(entity.getRating())
                     .feedbackDate(localDateTimeStringFromZone(entity.getLatestDate()))

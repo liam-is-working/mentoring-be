@@ -34,6 +34,14 @@ public class BookingService {
     private final MeetingLogsRepository meetingLogsRepository;
     private final MailService mailService;
     private final ScheduleService scheduleService;
+    private final AppConfig appConfig;
+
+    public boolean isAllowedToBook(UUID studentId){
+        var bookingMentee = bookingMenteeRepository.findAllByMenteeId(studentId);
+        return bookingMentee.stream()
+                .filter(bm -> Booking.Status.REQUESTED.name().equals(bm.getBooking().getStatus()))
+                .count() <= appConfig.getMaxRequestedBooking();
+    }
 
     public List<MeetingLogResponse> getMeetingLogs(long id) {
         var logs = meetingLogsRepository.findAllByBookingId(id);
@@ -163,6 +171,21 @@ public class BookingService {
         var topic = topicRepository.findById(request.getTopicId())
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Cannot find topic with id: %s", request.getTopicId())));
 
+        var overLimitBooking = request.getParticipants().stream()
+                .filter(id -> bookingsOfMember.stream()
+                                .filter(bm -> bm.getMenteeId().equals(id)
+                                        && Booking.Status.REQUESTED.name().equals(bm.getBooking().getStatus()))
+                                .count() > appConfig.getMaxRequestedBooking())
+                .map(id -> bookingsOfMember.stream().filter(bm -> bm.getMenteeId().equals(id)).findFirst().map(BookingMentee::getMentee).orElse(null))
+                .collect(Collectors.toList());
+
+        if(!overLimitBooking.isEmpty()){
+            var error = new ClientBadRequestError("Over limit booking");
+            error.setDetails(overLimitBooking.stream().map(UserProfileResponse::fromUserProfileMinimal).toList());
+            throw error;
+        }
+
+
         var overlappedBookings = bookingsOfMember.stream()
                 .filter(bookingMentee -> {
                     var booking = bookingMentee.getBooking();
@@ -214,9 +237,12 @@ public class BookingService {
         bookingMenteeRepository.saveAll(bookingMentees);
 
         var newBookingId = newBooking.getId();
+        //mail
         BackgroundJob.schedule(Instant.now().plus(2, ChronoUnit.MINUTES), () -> mailService.sendBookingMail(newBookingId));
-        BackgroundJob.schedule(ZonedDateTime.of(newBooking.getBookingDate().atTime(newBooking.getStartTime()), DateTimeUtils.VIET_NAM_ZONE),
-                () -> cancelBooking(newBookingId));
+
+        //auto cancel
+        var cancelTime = ZonedDateTime.of(newBooking.getBookingDate().atTime(newBooking.getStartTime()).minus(appConfig.getAutoRejectBookingDelay(), ChronoUnit.MINUTES), DateTimeUtils.VIET_NAM_ZONE);
+        BackgroundJob.schedule(cancelTime, () -> cancelBooking(newBookingId));
     }
 
 

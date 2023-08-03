@@ -37,9 +37,18 @@ public class Booking {
     @Temporal(TemporalType.DATE)
     private LocalDate bookingDate ;
 
-    @Temporal(TemporalType.TIMESTAMP)
-    @CreationTimestamp
-    private ZonedDateTime createdDate ;
+    private ZonedDateTime createdDate;
+    private ZonedDateTime updatedDate;
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+    }
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mentor_id")

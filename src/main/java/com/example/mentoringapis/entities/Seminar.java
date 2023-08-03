@@ -1,5 +1,6 @@
 package com.example.mentoringapis.entities;
 
+import com.example.mentoringapis.utilities.DateTimeUtils;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -8,6 +9,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +33,18 @@ public class Seminar implements Comparable{
     private String imageUrl;
     private String attachmentUrl;
     private LocalDateTime startTime;
+    private ZonedDateTime createdDate;
+    private ZonedDateTime updatedDate;
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+    }
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "feedback_form")

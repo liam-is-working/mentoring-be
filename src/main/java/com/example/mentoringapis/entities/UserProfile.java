@@ -1,5 +1,6 @@
 package com.example.mentoringapis.entities;
 
+import com.example.mentoringapis.utilities.DateTimeUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -11,6 +12,7 @@ import org.hibernate.type.SqlTypes;
 
 import java.sql.Date;
 import java.sql.SQLType;
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,6 +39,18 @@ public class UserProfile {
     private String coverUrl;
     @JdbcTypeCode(SqlTypes.JSON)
     private String cv;
+    private ZonedDateTime createdDate;
+    private ZonedDateTime updatedDate;
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+    }
 
     @OneToOne(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)
     @MapsId

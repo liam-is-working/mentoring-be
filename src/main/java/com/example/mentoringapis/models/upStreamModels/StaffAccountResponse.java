@@ -2,6 +2,7 @@ package com.example.mentoringapis.models.upStreamModels;
 
 import com.example.mentoringapis.entities.Account;
 import com.example.mentoringapis.entities.Department;
+import com.example.mentoringapis.utilities.DateTimeUtils;
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,6 +15,8 @@ public class StaffAccountResponse {
     private UUID id;
     private String email;
     private String status;
+    private String createdDate;
+    private String updatedDate;
     private String firebaseUuid;
     private String role;
     private boolean isAuthenticated;
@@ -41,6 +44,8 @@ public class StaffAccountResponse {
                 .status(account.getStatus())
                 .email(account.getEmail())
                 .role(account.getRole())
+                .createdDate(DateTimeUtils.localDateTimeStringFromZone(account.getUserProfile().getCreatedDate()))
+                .updatedDate(DateTimeUtils.localDateTimeStringFromZone(account.getUserProfile().getUpdatedDate()))
                 .department(Optional.ofNullable(account.getDepartment()).map(DepartmentRes::fromDepartment).orElse(null))
                 .profile(Optional.ofNullable(account.getUserProfile()).map(prof -> UserProfileResponse.fromUserProfile(prof)).orElse(null))
                 .build();

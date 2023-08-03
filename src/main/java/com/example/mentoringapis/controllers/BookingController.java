@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static java.util.Optional.ofNullable;
@@ -59,6 +60,11 @@ public class BookingController {
                     "body", ofNullable(error.getDetails()).orElse("") ));
         }
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/is-allowed/{menteeId}")
+    public ResponseEntity isAllowedToBook(@PathVariable UUID menteeId){
+        return ResponseEntity.ok(Map.of("result", bookingService.isAllowedToBook(menteeId)));
     }
 
     @PutMapping()

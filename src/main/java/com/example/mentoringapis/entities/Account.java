@@ -1,5 +1,6 @@
 package com.example.mentoringapis.entities;
 
+import com.example.mentoringapis.utilities.DateTimeUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -41,9 +42,18 @@ public class Account {
     private String email;
     private String role;
     private String status;
-    @Temporal(TemporalType.TIMESTAMP)
-    @CreationTimestamp
     private ZonedDateTime createdDate;
+    private ZonedDateTime updatedDate;
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+    }
 
     @JsonIgnore
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "account")

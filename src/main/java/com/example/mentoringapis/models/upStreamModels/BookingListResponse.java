@@ -30,6 +30,7 @@ public class BookingListResponse {
         private UserProfileResponse owner;
         private List<UserProfileResponse> mentees;
         private String createdDate;
+        private String updatedDate;
         private Set<UUID> attendedMentees;
         private Set<UUID> absentMentees;
         private String description;
@@ -41,6 +42,7 @@ public class BookingListResponse {
 
         public static BookingCard fromBookingEntity(Booking booking){
             return BookingCard.builder()
+                    .updatedDate(DateTimeUtils.localDateTimeStringFromZone(booking.getUpdatedDate()))
                     .id(booking.getId())
                     .cancelBy(ofNullable(booking.getCancelBy()).map(UserProfileResponse::fromUserProfileMinimal).orElse(null))
                     .didMentorAttend(booking.isDidMentorAttend())

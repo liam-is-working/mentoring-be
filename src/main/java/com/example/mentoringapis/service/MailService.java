@@ -42,6 +42,8 @@ public class MailService {
     private final UserProfileRepository userProfileRepository;
     private final BookingRepository bookingRepository;
     private final ObjectMapper om;
+    private final AppConfig appConfig;
+
 
     @Value("${mail.delayDuration}")
     private String delayDurationInMinute;
@@ -112,7 +114,7 @@ public class MailService {
                     );
             try {
                 mailjetClient.post(request);
-            } catch (MailjetException e) {
+            } catch (MailjetException | NullPointerException e) {
                 log.warn("Email exception", e);
             }
         });
@@ -145,7 +147,7 @@ public class MailService {
                     );
             try {
                 mailjetClient.post(request);
-            } catch (MailjetException e) {
+            } catch (MailjetException | NullPointerException e) {
                 log.warn("Email exception", e);
             }
         });
@@ -192,8 +194,11 @@ public class MailService {
                                 )
                         )
                 );
-        mailjetClient.post(request);
-    }
+        try {
+            mailjetClient.post(request);
+        } catch (MailjetException | NullPointerException e) {
+            log.warn("Email exception", e);
+        }    }
 
     public List<UUID> sendEmail(Long seminarId, List<UUID> selectedMentorIds) throws IOException {
         var seminarOptional = seminarRepository.findById(seminarId);
@@ -292,7 +297,7 @@ public class MailService {
                 );
         try {
             mailjetClient.post(request);
-        } catch (MailjetException e) {
+        } catch (MailjetException | NullPointerException e) {
             log.error("Mail exception",e);
         }
     }
@@ -310,7 +315,7 @@ public class MailService {
         var seminarsMap = accumulateSeminars(seminarIds);
         seminarsMap.forEach(
                 (id, seminar) -> {
-                    var sendTime = seminar.getStartTime().plusMinutes(delayMinutes());
+                    var sendTime = seminar.getStartTime().plusMinutes(appConfig.getInvitationEmailDelay());
                     var zonedSendTime = ZonedDateTime.of(sendTime, DateTimeUtils.VIET_NAM_ZONE);
                     BackgroundJob.schedule(zonedSendTime,() -> sendEmail(id, null));
                 }

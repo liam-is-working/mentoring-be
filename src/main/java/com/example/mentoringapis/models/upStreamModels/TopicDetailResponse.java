@@ -1,6 +1,7 @@
 package com.example.mentoringapis.models.upStreamModels;
 
 import com.example.mentoringapis.entities.Topic;
+import com.example.mentoringapis.utilities.DateTimeUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
@@ -14,6 +15,8 @@ public class TopicDetailResponse {
     String description;
     String status;
     String field;
+    String createdDate;
+    String updatedDate;
     String category;
     Long fieldId;
     Long categoryId;
@@ -25,6 +28,8 @@ public class TopicDetailResponse {
                 .category(topic.getCategory().getName())
                 .field(topic.getField().getName())
                 .name(topic.getName())
+                .createdDate(DateTimeUtils.localDateTimeStringFromZone(topic.getCreatedDate()))
+                .updatedDate(DateTimeUtils.localDateTimeStringFromZone(topic.getUpdatedDate()))
                 .description(topic.getDescription())
                 .id(topic.getId())
                 .status(topic.getStatus())
@@ -40,6 +45,8 @@ public class TopicDetailResponse {
                 .field(topic.getField().getName())
                 .name(topic.getName())
                 .description(topic.getDescription())
+                .createdDate(DateTimeUtils.localDateTimeStringFromZone(topic.getCreatedDate()))
+                .updatedDate(DateTimeUtils.localDateTimeStringFromZone(topic.getUpdatedDate()))
                 .id(topic.getId())
                 .status(topic.getStatus())
                 .fieldId(topic.getField().getId())

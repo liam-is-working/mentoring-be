@@ -33,7 +33,6 @@ public class DepartmentService {
         }
         var department = new Department();
         department.setName(request.getName());
-        department.setCreatedAt(DateTimeUtils.nowInVietnam().toLocalDateTime());
         department.setStaffAccounts(new HashSet<>(staffAccounts));
         departmentRepository.save(department);
         return DepartmentResponse.fromDepartment(department);

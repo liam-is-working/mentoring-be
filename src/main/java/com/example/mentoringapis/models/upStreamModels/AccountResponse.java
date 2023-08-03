@@ -20,12 +20,14 @@ public class AccountResponse {
     private String role;
     private String status;
     private String createdDate;
+    private String updatedDate;
     private boolean isAuthenticated;
 
     public static AccountResponse fromAccountEntity(Account account){
         return AccountResponse.builder()
                 .id(account.getId())
                 .createdDate(account.getCreatedDate().toLocalDateTime().format(DateTimeUtils.DEFAULT_DATE_TIME_FORMATTER))
+                .updatedDate(DateTimeUtils.localDateTimeStringFromZone(account.getUpdatedDate()))
                 .role(account.getRole())
                 .email(account.getEmail())
                 .build();
