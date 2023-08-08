@@ -36,5 +36,5 @@ public class TopicField {
     @PrePersist
     protected void onCreate() {
         createdDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
-    }
+        updatedDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);     }
 }

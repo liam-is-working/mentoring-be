@@ -2,10 +2,7 @@ package com.example.mentoringapis.controllers;
 
 import com.example.mentoringapis.errors.MentoringAuthenticationError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
-import com.example.mentoringapis.models.upStreamModels.CreateMentorAccountRequest;
-import com.example.mentoringapis.models.upStreamModels.MentorAccountResponse;
-import com.example.mentoringapis.models.upStreamModels.StaffAccountResponse;
-import com.example.mentoringapis.models.upStreamModels.UuidListRequest;
+import com.example.mentoringapis.models.upStreamModels.*;
 import com.example.mentoringapis.service.AccountService;
 import com.example.mentoringapis.service.AuthService;
 import jakarta.validation.Valid;
@@ -36,6 +33,11 @@ public class AccountController {
     @RequestMapping(value = "/staffs", method = RequestMethod.GET)
     public ResponseEntity<List<StaffAccountResponse>> listStaffAccounts() {
         return ResponseEntity.ok(accountService.getStaffs());
+    }
+
+    @RequestMapping(value = "/students", method = RequestMethod.GET)
+    public ResponseEntity<List<StudentAccountResponse>> listStudentAccounts() {
+        return ResponseEntity.ok(accountService.getStudents());
     }
 
     @PostMapping(value = "/mentors/invalidate")

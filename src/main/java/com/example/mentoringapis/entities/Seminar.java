@@ -44,7 +44,7 @@ public class Seminar implements Comparable{
     @PrePersist
     protected void onCreate() {
         createdDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
-    }
+        updatedDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);     }
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "feedback_form")

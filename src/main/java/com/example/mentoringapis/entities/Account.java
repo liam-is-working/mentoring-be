@@ -53,6 +53,7 @@ public class Account {
     @PrePersist
     protected void onCreate() {
         createdDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+        updatedDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
     }
 
     @JsonIgnore

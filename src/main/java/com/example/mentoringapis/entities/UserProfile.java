@@ -50,7 +50,7 @@ public class UserProfile {
     @PrePersist
     protected void onCreate() {
         createdDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
-    }
+        updatedDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);     }
 
     @OneToOne(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)
     @MapsId

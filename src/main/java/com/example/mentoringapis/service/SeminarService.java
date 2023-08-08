@@ -2,30 +2,35 @@ package com.example.mentoringapis.service;
 
 import com.example.mentoringapis.controllers.SeminarController;
 import com.example.mentoringapis.entities.Account;
+import com.example.mentoringapis.entities.AppConfig;
 import com.example.mentoringapis.entities.Seminar;
 import com.example.mentoringapis.entities.UserProfile;
 import com.example.mentoringapis.errors.ClientBadRequestError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
+import com.example.mentoringapis.models.mailModel.MentorNotification;
 import com.example.mentoringapis.models.paging.CustomPagingResponse;
 import com.example.mentoringapis.models.upStreamModels.CreateSeminarRequest;
 import com.example.mentoringapis.models.upStreamModels.SeminarResponse;
 import com.example.mentoringapis.models.upStreamModels.UpdateSeminarRequest;
-import com.example.mentoringapis.repositories.AccountsRepository;
-import com.example.mentoringapis.repositories.DepartmentRepository;
-import com.example.mentoringapis.repositories.SeminarRepository;
-import com.example.mentoringapis.repositories.UserProfileRepository;
+import com.example.mentoringapis.repositories.*;
 import com.example.mentoringapis.utilities.DateTimeUtils;
 import com.google.cloud.Tuple;
+import com.mailjet.client.errors.MailjetException;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
+import org.jobrunr.jobs.annotations.Job;
+import org.jobrunr.scheduling.BackgroundJob;
+import org.jobrunr.spring.annotations.Recurring;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static com.example.mentoringapis.utilities.DateTimeUtils.*;
@@ -41,8 +46,9 @@ public class SeminarService {
     private final UserProfileRepository userProfileRepository;
     private final FireStoreService fireStoreService;
     private final DepartmentRepository departmentRepository;
-    private final StaticResourceService staticResourceService;
-    private final FeedbackService feedbackService;
+    private final MailService mailService;
+    private final AppConfig appConfig;
+
 
     public List<Long> getTodaySeminarIds(){
         var startTime = DateTimeUtils.nowInVietnam().truncatedTo(ChronoUnit.DAYS);
@@ -140,7 +146,18 @@ public class SeminarService {
         }
         seminarRepository.save(newSeminar);
         fireStoreService.createDiscussionRoom(newSeminar.getId());
-//        feedbackService.initiateFeedback(newSeminar);
+
+        //send email
+        if(mentorProfiles != null){
+            mentorProfiles.parallelStream().forEach(
+                    p -> {
+                        var notification = new MentorNotification(newSeminar, p);
+                        var pId = p.getAccountId();
+                        CompletableFuture.runAsync(() -> mailService.sendMentorNotificationMail(notification, pId));
+                    }
+            );
+        }
+
         return SeminarResponse.fromSeminarEntity(newSeminar);
     }
 
@@ -204,12 +221,21 @@ public class SeminarService {
                     .nextPage(null)
                     .build();
         }
-
-
-
-
     }
 
+    @Recurring(id = "send-invitation-email-job", cron = "0 1 * * *", zoneId = "Asia/Ho_Chi_Minh")
+    @Job(name = "Sending invitation email job")
+    public void sendingMailJob() throws MailjetException {
+        var seminarIds = getTodaySeminarIds();
+        var seminarsMap = mailService.accumulateSeminars(seminarIds);
+        seminarsMap.forEach(
+                (id, seminar) -> {
+                    var sendTime = seminar.getStartTime().plusMinutes(appConfig.getInvitationEmailDelay());
+                    var zonedSendTime = ZonedDateTime.of(sendTime, DateTimeUtils.VIET_NAM_ZONE);
+                    BackgroundJob.schedule(zonedSendTime,() -> mailService.sendEmail(id, null));
+                }
+        );
+    }
 //    public CustomPagingResponse<SeminarResponse> searchByDateAndName(String startTime, String endTime, String searchName, Integer departmentId, UUID mentorUUID, String status, Pageable p){
 //        String mentorId = "";
 //        if(mentorUUID!=null)

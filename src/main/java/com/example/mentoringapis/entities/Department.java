@@ -35,6 +35,7 @@ public class Department {
     @PrePersist
     protected void onCreate() {
         createdAt = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+        updatedDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
     }
 
     @OneToMany(mappedBy = "department",

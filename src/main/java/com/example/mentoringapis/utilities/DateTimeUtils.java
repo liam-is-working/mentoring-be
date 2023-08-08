@@ -42,7 +42,7 @@ public class DateTimeUtils {
 
     public static LocalDateTime parseDate(String date) {
         try {
-            return LocalDateTime.parse(date, DEFAULT_DATE_TIME_FORMATTER);
+            return LocalDateTime.parse(date, DEFAULT_DATE_TIME_FORMATTER).truncatedTo(ChronoUnit.MINUTES);
         } catch (DateTimeParseException e) {
             log.error(e.getMessage());
             throw new IllegalArgumentException(e);
@@ -51,7 +51,7 @@ public class DateTimeUtils {
 
     public static LocalTime parseStringToLocalTime(String time) {
         try {
-            return LocalTime.parse(time, DEFAULT_TIME_FORMATTER);
+            return LocalTime.parse(time, DEFAULT_TIME_FORMATTER).truncatedTo(ChronoUnit.MINUTES);
         } catch (DateTimeParseException e) {
             log.error(e.getMessage());
             throw new IllegalArgumentException(e);
@@ -67,27 +67,7 @@ public class DateTimeUtils {
         }
     }
 
-    public static LocalTime parseSlotTime(String slotTime) {
-        try {
-            return LocalTime.parse(slotTime, DEFAULT_TIME_FORMATTER);
-        } catch (DateTimeParseException e) {
-            log.error(e.getMessage());
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    public static LocalDateTime parseRoundDate(String date) {
-        try {
-            if(!date.contains(":"))
-                date = date.concat(" 00:00:00");
-            return LocalDateTime.parse(date, DEFAULT_DATE_TIME_FORMATTER);
-        } catch (DateTimeParseException e) {
-            log.error(e.getMessage());
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-//    private LocalDateTime parseTimestamp(String timestamp) {
+    //    private LocalDateTime parseTimestamp(String timestamp) {
 //        try {
 //            return DATE_TIME_FORMAT.parse(timestamp);
 //        } catch (ParseException e) {

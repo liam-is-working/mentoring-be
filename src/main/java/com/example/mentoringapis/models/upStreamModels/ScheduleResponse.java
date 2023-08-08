@@ -75,6 +75,23 @@ public class ScheduleResponse {
                     .build();
         }
 
+        public static TimeSlot fromScheduleAndDate(AvailableTimeException exc, LocalDate startDate, boolean enable){
+            return TimeSlot.builder()
+                    .scheduleId(exc.getParent().getId())
+                    .exceptionId(exc.getId())
+                    .startTime(startDate.atTime(exc.getStartTime()).format(DateTimeUtils.DEFAULT_DATE_TIME_FORMATTER))
+                    .endTime(startDate.atTime(exc.getEndTime()).format(DateTimeUtils.DEFAULT_DATE_TIME_FORMATTER))
+                    .enable(enable)
+                    .startDate(startDate.format(DateTimeUtils.DEFAULT_DATE_FORMATTER))
+                    .endDate(startDate.format(DateTimeUtils.DEFAULT_DATE_FORMATTER))
+                    .isDaily(false)
+                    .isWeekly(false)
+                    .enable(enable)
+                    .belongToSeries(true)
+                    .isBooked(false)
+                    .build();
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;

@@ -2,8 +2,10 @@ package com.example.mentoringapis.service;
 
 import com.example.mentoringapis.entities.*;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
+import com.example.mentoringapis.models.mailModel.MentorNotification;
 import com.example.mentoringapis.models.upStreamModels.SeminarFeedbackReportResponse;
 import com.example.mentoringapis.repositories.BookingRepository;
+import com.example.mentoringapis.repositories.MentorMenteeRepository;
 import com.example.mentoringapis.repositories.SeminarRepository;
 import com.example.mentoringapis.repositories.UserProfileRepository;
 import com.example.mentoringapis.utilities.DateTimeUtils;
@@ -36,13 +38,11 @@ public class MailService {
     private static final String MENTOR_RATING_QUESTION_FORMAT = "Bạn đánh giá thế nào về chất lượng và chuyên môn của diễn giả %s";
     private static final String MENTOR_CONNECTING_QUESTION_FORMAT = "Bạn có muốn được kết nối với diễn giả %s sau buổi seminar này không?";
     private final MailjetClient mailjetClient;
-    private final SeminarService seminarService;
     private final SeminarRepository seminarRepository;
     private final FeedbackService feedbackService;
     private final UserProfileRepository userProfileRepository;
     private final BookingRepository bookingRepository;
     private final ObjectMapper om;
-    private final AppConfig appConfig;
 
 
     @Value("${mail.delayDuration}")
@@ -53,7 +53,7 @@ public class MailService {
         return Integer.parseInt(delayDurationInMinute);
     }
 
-    private Map<Long, Seminar> accumulateSeminars(List<Long> seminarIds){
+    public Map<Long, Seminar> accumulateSeminars(List<Long> seminarIds){
         return seminarRepository.findAllById(seminarIds).stream()
                 .collect(Collectors.toMap(
                         Seminar::getId,
@@ -142,6 +142,51 @@ public class MailService {
                                     .put(Emailv31.Message.TEMPLATELANGUAGE, true)
                                     .put(Emailv31.Message.SUBJECT, "Growth Me - Booking update")
                                     .put(Emailv31.Message.VARIABLES, generateBookingMailVariable(booking, recipient.get("Name").toString())
+                                    )
+                            )
+                    );
+            try {
+                mailjetClient.post(request);
+            } catch (MailjetException | NullPointerException e) {
+                log.warn("Email exception", e);
+            }
+        });
+
+
+    }
+
+    public List<JSONObject> buildRecipientsFromUuids(Iterable<UserProfile> ups){
+        var recipients = new ArrayList<JSONObject>();
+
+        ups.forEach(up -> recipients.add(
+                        new JSONObject()
+                                .put("Email", up.getAccount().getEmail())
+                                .put("Name", up.getFullName())
+                ));
+        return recipients;
+    }
+
+    public void sendMentorNotificationMail(MentorNotification mentorNotification, UUID mentorId){
+        var mentorOptional = userProfileRepository.findUserProfileByAccount_IdWithFollowers(mentorId);
+        if(mentorOptional.isEmpty())
+            return;
+
+        var mentor = mentorOptional.get();
+        var recipientsJson = buildRecipientsFromUuids(mentor.getFollowers());
+
+        recipientsJson.forEach(recipient -> {
+            var request = new MailjetRequest(Emailv31.resource)
+                    .property(Emailv31.MESSAGES, new JSONArray()
+                            .put(new JSONObject()
+                                    .put(Emailv31.Message.FROM, sender)
+                                    .put(Emailv31.Message.TO, new JSONArray()
+                                            .put(recipient)
+                                            .put(receiver)
+                                    )
+                                    .put(Emailv31.Message.TEMPLATEID, 4994991)
+                                    .put(Emailv31.Message.TEMPLATELANGUAGE, true)
+                                    .put(Emailv31.Message.SUBJECT, "Growth Me - Mentee Notification")
+                                    .put(Emailv31.Message.VARIABLES, generateVariableForMentorNotification(mentorNotification)
                                     )
                             )
                     );
@@ -308,18 +353,11 @@ public class MailService {
                 .put("loginLink", "https://studywithmentor-swm.web.app/");
     }
 
-    @Recurring(id = "send-invitation-email-job", cron = "0 1 * * *", zoneId = "Asia/Ho_Chi_Minh")
-    @Job(name = "Sending invitation email job")
-    public void sendingMailJob() throws MailjetException {
-        var seminarIds = seminarService.getTodaySeminarIds();
-        var seminarsMap = accumulateSeminars(seminarIds);
-        seminarsMap.forEach(
-                (id, seminar) -> {
-                    var sendTime = seminar.getStartTime().plusMinutes(appConfig.getInvitationEmailDelay());
-                    var zonedSendTime = ZonedDateTime.of(sendTime, DateTimeUtils.VIET_NAM_ZONE);
-                    BackgroundJob.schedule(zonedSendTime,() -> sendEmail(id, null));
-                }
-        );
+    public JSONObject generateVariableForMentorNotification(MentorNotification notification){
+        return new JSONObject()
+                .put("fullName",notification.getMentorFullName())
+                .put("message", notification.getMessage())
+                .put("detailLink", notification.getLink());
     }
 
 }

@@ -2,7 +2,9 @@ package com.example.mentoringapis.service;
 
 import com.example.mentoringapis.entities.Account;
 import com.example.mentoringapis.entities.Topic;
+import com.example.mentoringapis.entities.UserProfile;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
+import com.example.mentoringapis.models.mailModel.MentorNotification;
 import com.example.mentoringapis.models.upStreamModels.CreateTopicRequest;
 import com.example.mentoringapis.models.upStreamModels.TopicDetailResponse;
 import com.example.mentoringapis.models.upStreamModels.UpdateTopicRequest;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +28,7 @@ public class TopicService {
     private final TopicFieldRepository topicFieldRepository;
     private final AccountsRepository accountsRepository;
     private final TopicCategoryRepository topicCategoryRepository;
+    private final MailService mailService;
 
     public TopicDetailResponse createTopic(CreateTopicRequest request, UUID mentorId) throws ResourceNotFoundException {
         var topicField = topicFieldRepository.findById(request.getFieldId());
@@ -46,6 +50,10 @@ public class TopicService {
         newTopic.setStatus(Topic.Status.WAITING.name());
 
         topicRepository.save(newTopic);
+
+        //send email
+        var mentor = owner.get().getUserProfile();
+
         return TopicDetailResponse.fromTopicEntity(newTopic);
     }
 
@@ -94,6 +102,14 @@ public class TopicService {
         var topicsToActivate = topicRepository.findAllByIdIn(ids);
         topicsToActivate.forEach(topic -> topic.setStatus(Topic.Status.valueOf(status).name()));
         topicRepository.saveAll(topicsToActivate);
+        if(status.equals(Topic.Status.ACCEPTED.name()) && !topicsToActivate.isEmpty()){
+            topicsToActivate.forEach( t ->
+            {
+                var notification = new MentorNotification(t, t.getMentor());
+                var mentorId = t.getMentor().getAccountId();
+                CompletableFuture.runAsync(() -> mailService.sendMentorNotificationMail(notification, mentorId));
+            });
+        }
         return topicsToActivate.stream().map(TopicDetailResponse::fromTopicEntity).collect(Collectors.toList());
     }
 

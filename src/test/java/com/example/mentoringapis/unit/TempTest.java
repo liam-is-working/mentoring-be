@@ -12,6 +12,7 @@ import com.mailjet.client.resource.Emailv31;
 import lombok.Data;
 import net.fortuna.ical4j.model.Recur;
 import net.fortuna.ical4j.transform.recurrence.Frequency;
+import org.assertj.core.api.Assertions;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;

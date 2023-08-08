@@ -5,6 +5,7 @@ import com.example.mentoringapis.entities.AvailableTimeException;
 import com.example.mentoringapis.entities.Booking;
 import com.example.mentoringapis.errors.ClientBadRequestError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
+import com.example.mentoringapis.models.mailModel.MentorNotification;
 import com.example.mentoringapis.models.upStreamModels.*;
 import com.example.mentoringapis.repositories.AvailableTimeExceptionRepository;
 import com.example.mentoringapis.repositories.BookingRepository;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static java.util.Optional.ofNullable;
@@ -33,6 +35,7 @@ public class ScheduleService {
     private final BookingRepository bookingRepository;
     private final AvailableTimeExceptionRepository availableTimeExceptionRepository;
     private final UserProfileRepository userProfileRepository;
+    private final MailService mailService;
 
     @Value("${mentoring.duration}")
     String duration;
@@ -109,18 +112,18 @@ public class ScheduleService {
                 .filter(booking -> doesCollapseTimeRange(booking.getStartTime(), booking.getEndTime(), request.startTimeAsLocalTime(), requestEndTime))
                 .anyMatch(booking -> {
                     var requestDatesAroundBookingDate =
-                            getAllOccurrencesDateBetween(booking.getBookingDate().minusWeeks(1), booking.getBookingDate().plusWeeks(1), requestRecurRule, request.startDateAsLocalDate(), List.of());
+                            getAllOccurrencesDateBetween(booking.getBookingDate().minusMonths(1), booking.getBookingDate().plusMonths(1), requestRecurRule, request.startDateAsLocalDate(), List.of());
                     return requestDatesAroundBookingDate.contains(booking.getBookingDate());
                 });
 
         var overlapExceptionDate = availableTimes.stream().map(AvailableTime::getAvailableTimeExceptionSet)
                 .flatMap(Collection::stream)
                 .filter(AvailableTimeException::isEnable)
-                .filter(exc -> exc.getStartTime().isBefore(requestEndTime) && exc.getEndTime().isAfter(request.startTimeAsLocalTime()))
-                .filter(exc -> exc.getExceptionDate().isBefore(request.endDateAsLocalDate()) && exc.getExceptionDate().isAfter(request.startDateAsLocalDate())) //collapse start/end day
+                .filter(exc -> doesCollapseDateRange(exc.getExceptionDate(), exc.getExceptionDate(), request.startDateAsLocalDate(), request.endDateAsLocalDate()))
+                .filter(exc -> doesCollapseTimeRange(exc.getStartTime(), exc.getEndTime(), request.startTimeAsLocalTime(), requestEndTime))
                 .anyMatch(exc -> {
                     var requestDatesAroundExcDate =
-                            getAllOccurrencesDateBetween(exc.getExceptionDate().minusWeeks(1), exc.getExceptionDate().plusWeeks(1), requestRecurRule, request.startDateAsLocalDate(), List.of());
+                            getAllOccurrencesDateBetween(exc.getExceptionDate().minusMonths(1), exc.getExceptionDate().plusMonths(1), requestRecurRule, request.startDateAsLocalDate(), List.of());
                     return requestDatesAroundExcDate.contains(exc.getExceptionDate());
                 });
 
@@ -244,6 +247,10 @@ public class ScheduleService {
         scheduleToEdit.setEndDate(request.endDateAsLocalDate().isEqual(LocalDate.MAX)?null:request.endDateAsLocalDate());
         scheduleToEdit.setRrule(rrule);
 
+        //send mail
+        var notification = new MentorNotification(mentor);
+        CompletableFuture.runAsync(() -> mailService.sendMentorNotificationMail(notification, mentorId));
+
         DetailScheduleRequest.fromScheduleEntity(schedulesRepository.save(scheduleToEdit));
     }
 
@@ -266,6 +273,11 @@ public class ScheduleService {
         newSchedule.setEndDate(request.endDateAsLocalDate().isEqual(LocalDate.MAX)?null:request.endDateAsLocalDate());
         newSchedule.setStartDate(request.startDateAsLocalDate());
         newSchedule.setRrule(rrule);
+
+        //send mail
+        var notification = new MentorNotification(mentor);
+        CompletableFuture.runAsync(() -> mailService.sendMentorNotificationMail(notification, mentorId));
+
         DetailScheduleRequest.fromScheduleEntity(schedulesRepository.save(newSchedule));
     }
 
@@ -297,7 +309,7 @@ public class ScheduleService {
                 .stream().map(AvailableTime::getAvailableTimeExceptionSet)
                 .flatMap(Collection::stream)
                 .filter(exc -> exc.isEnable() && exc.getExceptionDate().compareTo(startPeriod) >= 0 && exc.getExceptionDate().compareTo(endPeriod) <= 0)
-                .map(exc -> ScheduleResponse.TimeSlot.fromScheduleAndDate(exc.getParent(),exc.getExceptionDate(), exc.getId(), exc.isEnable()))
+                .map(exc -> ScheduleResponse.TimeSlot.fromScheduleAndDate(exc,exc.getExceptionDate(), exc.isEnable()))
                 .forEach(resultSet::add);
 
         mentor.getAvailableTimes()

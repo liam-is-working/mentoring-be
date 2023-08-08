@@ -2,10 +2,7 @@ package com.example.mentoringapis.service;
 
 import com.example.mentoringapis.entities.Account;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
-import com.example.mentoringapis.models.upStreamModels.AccountResponse;
-import com.example.mentoringapis.models.upStreamModels.AccountUpdateRequest;
-import com.example.mentoringapis.models.upStreamModels.MentorAccountResponse;
-import com.example.mentoringapis.models.upStreamModels.StaffAccountResponse;
+import com.example.mentoringapis.models.upStreamModels.*;
 import com.example.mentoringapis.repositories.AccountsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -40,6 +37,15 @@ public class AccountService {
                 .findAccountsByRole(Account.Role.STAFF.name())
                 .stream()
                 .map(StaffAccountResponse::fromAccountEntity)
+                .collect(Collectors.toList());
+    }
+
+
+    public List<StudentAccountResponse> getStudents(){
+        return accountsRepository
+                .findAccountsByRole(Account.Role.STUDENT.name())
+                .stream()
+                .map(StudentAccountResponse::fromAccountEntity)
                 .collect(Collectors.toList());
     }
 

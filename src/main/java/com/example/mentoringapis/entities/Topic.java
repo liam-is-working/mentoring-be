@@ -4,6 +4,7 @@ import com.example.mentoringapis.utilities.DateTimeUtils;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.ZonedDateTime;
 
@@ -34,7 +35,7 @@ public class Topic {
     @PrePersist
     protected void onCreate() {
         createdDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
-    }
+        updatedDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);     }
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
