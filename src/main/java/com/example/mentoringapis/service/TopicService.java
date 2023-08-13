@@ -3,15 +3,13 @@ package com.example.mentoringapis.service;
 import com.example.mentoringapis.entities.Account;
 import com.example.mentoringapis.entities.Topic;
 import com.example.mentoringapis.entities.UserProfile;
+import com.example.mentoringapis.errors.ClientBadRequestError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.mailModel.MentorNotification;
 import com.example.mentoringapis.models.upStreamModels.CreateTopicRequest;
 import com.example.mentoringapis.models.upStreamModels.TopicDetailResponse;
 import com.example.mentoringapis.models.upStreamModels.UpdateTopicRequest;
-import com.example.mentoringapis.repositories.AccountsRepository;
-import com.example.mentoringapis.repositories.TopicCategoryRepository;
-import com.example.mentoringapis.repositories.TopicFieldRepository;
-import com.example.mentoringapis.repositories.TopicRepository;
+import com.example.mentoringapis.repositories.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +26,7 @@ public class TopicService {
     private final TopicFieldRepository topicFieldRepository;
     private final AccountsRepository accountsRepository;
     private final TopicCategoryRepository topicCategoryRepository;
+    private final UserProfileRepository userProfileRepository;
     private final MailService mailService;
 
     public TopicDetailResponse createTopic(CreateTopicRequest request, UUID mentorId) throws ResourceNotFoundException {
@@ -50,10 +49,6 @@ public class TopicService {
         newTopic.setStatus(Topic.Status.WAITING.name());
 
         topicRepository.save(newTopic);
-
-        //send email
-        var mentor = owner.get().getUserProfile();
-
         return TopicDetailResponse.fromTopicEntity(newTopic);
     }
 
@@ -87,7 +82,10 @@ public class TopicService {
     }
 
     public List<TopicDetailResponse> getAll(){
-        return topicRepository.findAll().stream().map(TopicDetailResponse::fromTopicEntity).collect(Collectors.toList());
+        return topicRepository.findAll().stream()
+                .filter(t -> !Topic.Status.DELETED.name().equals(t.getStatus()))
+                .map(TopicDetailResponse::fromTopicEntity)
+                .collect(Collectors.toList());
     }
 
     public List<TopicDetailResponse> getByMentorId(UUID mentorId){
@@ -98,15 +96,26 @@ public class TopicService {
                 .collect(Collectors.toList());
     }
 
-    public List<TopicDetailResponse> changeStatus(List<Long> ids, String status){
+    public List<TopicDetailResponse> changeStatus(List<Long> ids, String status) throws ClientBadRequestError {
         var topicsToActivate = topicRepository.findAllByIdIn(ids);
+
+        if(Topic.Status.DELETED.name().equals(status)){
+            if(topicsToActivate.stream().anyMatch(t -> !Topic.Status.WAITING.name().equals(t.getStatus())))
+                throw new ClientBadRequestError("DELETE TOPIC CAN ONLY EFFECT ON WAITING TOPIC");
+        }
+
         topicsToActivate.forEach(topic -> topic.setStatus(Topic.Status.valueOf(status).name()));
         topicRepository.saveAll(topicsToActivate);
+
+        //update search vector
+        topicsToActivate.forEach(t -> CompletableFuture.runAsync(() -> userProfileRepository.updateTsvSearch(t.getMentor().getAccountId().toString())));
+
         if(status.equals(Topic.Status.ACCEPTED.name()) && !topicsToActivate.isEmpty()){
             topicsToActivate.forEach( t ->
             {
                 var notification = new MentorNotification(t, t.getMentor());
                 var mentorId = t.getMentor().getAccountId();
+                //send email if topic is accepted
                 CompletableFuture.runAsync(() -> mailService.sendMentorNotificationMail(notification, mentorId));
             });
         }

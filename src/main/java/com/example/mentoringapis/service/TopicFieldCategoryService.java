@@ -19,8 +19,6 @@ public class TopicFieldCategoryService {
     private final TopicFieldRepository topicFieldRepository;
     private final TopicCategoryRepository topicCategoryRepository;
 
-    private final String OTHER_NAME = "Khác";
-
     private Iterable<TopicField> getALlFieldsAndCheckDuplicate(String name) throws ClientBadRequestError {
         var fields = topicFieldRepository.findAll();
         for (TopicField t: fields) {
@@ -62,6 +60,14 @@ public class TopicFieldCategoryService {
         });
 
         return topicFieldRepository.findAll();
+    }
+
+    private void updateSearchVectorWhenTopicFieldChange(long id){
+        var field = topicFieldRepository.findById(id)
+                .orElse(null);
+        if(field == null)
+            return;
+
     }
 
     public Iterable<TopicCategory> createTopicCategory(AdminController.CreateSimpleEntityRequest request) throws ClientBadRequestError {

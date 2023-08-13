@@ -6,6 +6,8 @@ import lombok.Data;
 @Data
 public class AppConfigRequest {
     private int invitationEmailDelay;
+    private int maxParticipant;
     private int autoRejectBookingDelay;
     private int maxRequestedBooking;
+    private int maxCallDuration;
 }

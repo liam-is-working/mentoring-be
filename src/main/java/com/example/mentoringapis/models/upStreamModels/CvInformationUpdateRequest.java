@@ -5,11 +5,24 @@ import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Arrays;
+
 @Getter
 @Setter
 public class CvInformationUpdateRequest {
 
     String description;
+
+    public String toSearchable(){
+        StringBuilder sb = new StringBuilder();
+        Arrays.stream(workingExps).forEach(work -> sb.append(work.company).append(' ').append(work.position).append(' '));
+        Arrays.stream(achievements).forEach(acm -> sb.append(acm.name).append(' ').append(acm.organization).append(' '));
+        Arrays.stream(socialActivities).forEach(sact -> sb.append(sact.organization).append(' ').append(sact.position).append(' '));
+        Arrays.stream(learningExps).forEach(learn -> sb.append(learn.school).append(' ').append(learn.major).append(' '));
+        Arrays.stream(certificates).forEach(cert -> sb.append(cert.name).append(' ').append(cert.organization).append(' '));
+        Arrays.stream(skills).forEach(skill -> sb.append(skill.name).append(' '));
+        return sb.toString();
+    }
 
     @Valid
     WorkingExp[] workingExps;

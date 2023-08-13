@@ -69,22 +69,6 @@ public class ScheduleService {
         return returnList;
     }
 
-    public static List<LocalDateTime> getRecentAvailableTimes(Collection<AvailableTime> availableTimes){
-        var nowInVn = DateTimeUtils.nowInVietnam().toLocalDateTime().truncatedTo(ChronoUnit.DAYS);
-        var twoWeekFromNowInVn = nowInVn.plusWeeks(2).plusDays(1);
-        return availableTimes.stream()
-                .parallel()
-                .map(aT -> {
-                    var available = getAllOccurrencesDateTimeBetween(nowInVn, twoWeekFromNowInVn, aT);
-                    aT.exceptionDateTimes().stream()
-                            .filter(date -> date.compareTo(nowInVn)>=0 && date.compareTo(twoWeekFromNowInVn)<=0)
-                            .forEach(available::add);
-                    return available;
-                })
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
-    }
-
     public List<LocalDate> getAllOccurrencesDateBetween(LocalDate startPeriod, LocalDate endPeriod, String rule, LocalDate startDate, Collection<LocalDate> exception){
         if(rule == null)
             return List.of(startDate);

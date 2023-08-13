@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.util.Locale;
+
 @Data
 public class SignInWithGoogleRequest {
     @Email
@@ -19,4 +21,8 @@ public class SignInWithGoogleRequest {
     private String localId;
     private String fullName;
     private String avatarUrl;
+
+    public String getEmail() {
+        return email.toLowerCase(Locale.ROOT);
+    }
 }

@@ -39,6 +39,7 @@ public class UserProfile {
     private String coverUrl;
     @JdbcTypeCode(SqlTypes.JSON)
     private String cv;
+    private String cvSearchable;
     private ZonedDateTime createdDate;
     private ZonedDateTime updatedDate;
 
@@ -50,19 +51,23 @@ public class UserProfile {
     @PrePersist
     protected void onCreate() {
         createdDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
-        updatedDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);     }
+        updatedDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+    }
 
-    @OneToOne(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)
+    @OneToOne(cascade = CascadeType.MERGE, fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "account_id")
     @JsonIgnore
     private Account account;
 
-    @OneToMany(mappedBy = "mentor")
+    @OneToMany(mappedBy = "mentor", fetch = FetchType.LAZY)
     private Set<AvailableTime> availableTimes = new HashSet<>();
 
     @OneToMany(mappedBy = "mentor", fetch = FetchType.LAZY)
     private Set<Topic> topics = new HashSet<>();
+
+    @OneToMany(mappedBy = "mentor", fetch = FetchType.LAZY)
+    private Set<Booking> bookingsOfMentors = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -75,7 +80,7 @@ public class UserProfile {
     @OneToMany(mappedBy = "mentee", fetch = FetchType.LAZY)
     private Set<BookingMentee> bookingMentees = new HashSet<>();
 
-    @ManyToMany(mappedBy = "mentors")
+    @ManyToMany(mappedBy = "mentors", fetch = FetchType.LAZY)
     private Set<Seminar> seminars = new HashSet<>();
 
     @OneToMany(mappedBy = "receiver", fetch = FetchType.LAZY)

@@ -8,15 +8,20 @@ import com.example.mentoringapis.repositories.MentorMenteeRepository;
 import com.example.mentoringapis.repositories.UserProfileRepository;
 import com.example.mentoringapis.utilities.DateTimeUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
+import com.jayway.jsonpath.TypeRef;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +50,9 @@ public class UserProfileService {
                     userProfileRepository.save(profile);
 
                     fireStoreService.updateUserProfile(profile.getFullName(), null, account.getRole(), account.getEmail(),mentorId);
+                    if(request.getFullName()!=null)
+                        //update search vector
+                        CompletableFuture.runAsync(() -> userProfileRepository.updateTsvSearch(mentorId.toString()));
 
                     return account;
                 }
@@ -55,6 +63,7 @@ public class UserProfileService {
     public UserProfileResponse update(UserProfileUpdateRequest request, UUID profileId){
         return userProfileRepository.findUserProfileByAccount_Id(profileId)
                 .map(prof -> {
+                    var isNameTheSame = Objects.equals(request.getFullName(),prof.getFullName());
                     prof.setFullName(request.getFullName());
                     prof.setGender(request.getGender());
                     prof.setAvatarUrl(request.getAvatarUrl());
@@ -66,6 +75,9 @@ public class UserProfileService {
                         prof.setDob(Date.valueOf(request.getDob()));
                     }
 
+                    //update search vector
+                    if(!isNameTheSame)
+                        CompletableFuture.runAsync(() -> userProfileRepository.updateTsvSearch(profileId.toString()));
                     fireStoreService.updateUserProfile(request.getFullName(), request.getAvatarUrl(),
                             prof.getAccount().getRole(), prof.getAccount().getEmail(), profileId);
                     return userProfileRepository.save(prof);
@@ -128,10 +140,17 @@ public class UserProfileService {
 
     private String extractOccupation(String cvString){
         try {
-            List<Map<String,String>> workingExps = JsonPath.read(cvString, "$.workingExps[?(@.workingHere == true)]");
+            List<CvInformationResponse.WorkingExp> workingExps = objectMapper.convertValue(JsonPath.read(cvString, "$.workingExps[*]"), new TypeReference<List<CvInformationResponse.WorkingExp>>() {});
+            workingExps.sort(Comparator.comparing(wExp -> DateTimeUtils.parseStringToLocalDate(wExp.getStartDate())));
+            Collections.reverse(workingExps);
             if(workingExps.isEmpty())
                 return null;
-            return workingExps.get(0).get("position").concat(" tại ").concat(workingExps.get(0).get("company"));
+            var mostRecentJob = workingExps.stream()
+                    .filter(CvInformationResponse.WorkingExp::isWorkingHere)
+                    .findFirst()
+                    .orElse(workingExps.get(0));
+
+            return String.format("%s tại %s", mostRecentJob.getPosition(), mostRecentJob.getCompany());
         }catch (IllegalArgumentException | NullPointerException | PathNotFoundException exception) {
             return null;
         }
@@ -142,6 +161,7 @@ public class UserProfileService {
                 .map(profileToUpdate -> {
                     try {
                         profileToUpdate.setCv(objectMapper.writeValueAsString(cv));
+                        profileToUpdate.setCvSearchable(cv.toSearchable());
                         return userProfileRepository.save(profileToUpdate);
                     } catch (JsonProcessingException e) {
                         e.printStackTrace();
@@ -153,6 +173,9 @@ public class UserProfileService {
                     try {
                         var cvRes = objectMapper.readValue(cvString, CvInformationResponse.class);
                         cvRes.setUserProfileId(profileId);
+
+                        //update search vector
+                        CompletableFuture.runAsync(() -> userProfileRepository.updateTsvSearch(profileId.toString()));
                         return cvRes;
                     } catch (JsonProcessingException e) {
                         //TODO log
@@ -162,36 +185,52 @@ public class UserProfileService {
                 .orElse(null);
     }
 
-    public MentorListResponse getMentorCards(String[] searchString){
+    private MentorListResponse.MentorCard mentorCardFromEntity(UserProfile mentor){
+        return MentorListResponse.MentorCard
+                .builder()
+                .avatarUrl(mentor.getAvatarUrl())
+                .followers(mentor.getFollowers().size())
+                .ratingOptional(mentor.getFeedbacks().stream().mapToInt(MeetingFeedback::getRating).average())
+                .mentorId(mentor.getAccountId().toString())
+                .description(mentor.getDescription())
+                .fullName(mentor.getFullName())
+                .occupation(extractOccupation(mentor.getCv()))
+                .skills(extractSkills(mentor.getCv()))
+                .topics(mentor.getTopics()
+                        .stream()
+                        .filter(topic -> topic.getStatus().equals(Topic.Status.ACCEPTED.name()))
+                        .map(TopicDetailResponse::fromTopicEntityNoMentor)
+                        .toList())
+                .build();
+    }
+
+    public MentorListResponse getMentorCards(){
         var mentors = userProfileRepository.getAllActivatedMentors();
-        var response  = new MentorListResponse();
         var mentorCards = mentors.stream()
-                .map(mentor -> MentorListResponse.MentorCard
-                        .builder()
-                        .availableTimes(
-                                ScheduleService.getRecentAvailableTimes(mentor.getAvailableTimes()).stream()
-                                        .map(time -> time.format(DateTimeUtils.DEFAULT_DATE_TIME_FORMATTER))
-                                        .toList())
-                        .avatarUrl(mentor.getAvatarUrl())
-                        .followers(mentor.getFollowers().size())
-                        .ratingOptional(mentor.getFeedbacks().stream().mapToInt(MeetingFeedback::getRating).average())
-                        .mentorId(mentor.getAccountId().toString())
-                        .description(mentor.getDescription())
-                        .fullName(mentor.getFullName())
-                        .occupation(extractOccupation(mentor.getCv()))
-                        .skills(extractSkills(mentor.getCv()))
-                        .topics(mentor.getTopics()
-                                .stream()
-                                .filter(topic -> topic.getStatus().equals(Topic.Status.ACCEPTED.name()))
-                                .map(TopicDetailResponse::fromTopicEntityNoMentor)
-                                .toList())
-                        .build()
-                )
-                .filter(mentorCard -> Arrays.stream(searchString)
-                        .allMatch(search -> mentorCard.getSearchString()
-                                .stream()
-                                .anyMatch(keyword -> StringUtils.containsAnyIgnoreCase(keyword,search))))
-                .toList();
+                .map(this::mentorCardFromEntity).toList();
+
+        var response = new MentorListResponse();
+        response.setMentorCards(mentorCards);
+        return response;
+    }
+
+    public MentorListResponse getMentorCards(String[] searchString){
+        if(searchString==null || searchString.length==0)
+            return getMentorCards();
+
+        var searchResult = userProfileRepository.searchAllActivatedMentors(String.join(" ", searchString));
+        searchResult.sort((r1,r2) -> Float.compare(r2.getRank(),r1.getRank()));
+
+
+        var mentorsList = userProfileRepository.getAllActivatedMentors(searchResult.stream().map(UserProfileRepository.SearchMentorResult::getAccountId).toList());
+
+
+        var mentorsMap = mentorsList.stream().collect(Collectors.toMap(UserProfile::getAccountId, up -> up));
+
+        var response  = new MentorListResponse();
+        var mentorCards = searchResult.stream()
+                .map(sR  -> mentorsMap.get(sR.getAccountId()))
+                .map(this::mentorCardFromEntity).toList();
         response.setMentorCards(mentorCards);
         return response;
     }

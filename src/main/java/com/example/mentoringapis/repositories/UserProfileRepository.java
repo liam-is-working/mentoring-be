@@ -4,9 +4,9 @@ import com.example.mentoringapis.entities.UserProfile;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,6 +18,9 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, UUID> 
             "left join fetch up.account " +
             "where up.accountId = ?1")
     Optional<UserProfile> findUserProfileByAccount_Id(UUID accountId);
+
+    @Query(value = "select update_profile_tsvsearch(?1)", nativeQuery = true)
+    void updateTsvSearch(String accountId);
 
     @Query("select up from UserProfile up " +
             "left join fetch up.account " +
@@ -49,8 +52,7 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, UUID> 
     Optional<UserProfile> findUserProfileByAccount_IdFetchSchedule(UUID accountId);
     @Query("select up from UserProfile  up " +
             "left join fetch up.account acc " +
-            "left join fetch up.availableTimes aT " +
-            "left join fetch aT.availableTimeExceptionSet exc " +
+            "left join fetch acc.department d " +
             "left join fetch up.topics topics " +
             "left join fetch topics.category cat " +
             "left join fetch topics.field field " +
@@ -58,6 +60,27 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, UUID> 
             "left join fetch up.feedbacks " +
             "where acc.role = 'MENTOR' and acc.status = 'ACTIVATED' ")
     List<UserProfile> getAllActivatedMentors();
+
+    @Query("select up from UserProfile  up " +
+            "left join fetch up.account acc " +
+            "left join fetch acc.department d " +
+            "left join fetch up.topics topics " +
+            "left join fetch topics.category cat " +
+            "left join fetch topics.field field " +
+            "left join fetch up.followers " +
+            "left join fetch up.feedbacks " +
+            "where acc.role = 'MENTOR' and acc.status = 'ACTIVATED' and up.accountId in ?1")
+    List<UserProfile> getAllActivatedMentors(Iterable<UUID> ids);
+
+    @Query(value = "select user_profiles.account_id as accountId, ts_rank_cd(tsvector_search, query) as rank " +
+            "from user_profiles, plainto_tsquery('simple', ?1) query " +
+            "where query @@ user_profiles.tsvector_search", nativeQuery = true)
+    List<SearchMentorResult> searchAllActivatedMentors(String searchString);
+
+    public interface SearchMentorResult{
+        UUID getAccountId();
+        float getRank();
+    }
 
     @Query("select up from UserProfile  up " +
             "left join fetch up.account acc " +

@@ -1,5 +1,7 @@
 package com.example.mentoringapis.models.upStreamModels;
 
+import com.example.mentoringapis.errors.ClientBadRequestError;
+import com.example.mentoringapis.utilities.DateTimeUtils;
 import com.example.mentoringapis.validation.CheckStringDate;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -22,6 +24,9 @@ public class UpdateSeminarRequest {
     private String imageUrl;
     @CheckStringDate(format = DEFAULT_DATE_TIME_PATTERN)
     private String startTime;
+    @CheckStringDate(format = DEFAULT_DATE_TIME_PATTERN)
+    private String endTime;
+    private Integer departmentId;
     private Set<UUID> mentorIds;
     private Set<String> attachmentUrls;
 }

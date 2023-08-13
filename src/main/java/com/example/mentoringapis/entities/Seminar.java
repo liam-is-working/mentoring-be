@@ -33,6 +33,7 @@ public class Seminar implements Comparable{
     private String imageUrl;
     private String attachmentUrl;
     private LocalDateTime startTime;
+    private LocalDateTime endTime;
     private ZonedDateTime createdDate;
     private ZonedDateTime updatedDate;
 

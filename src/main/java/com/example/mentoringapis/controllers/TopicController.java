@@ -1,5 +1,6 @@
 package com.example.mentoringapis.controllers;
 
+import com.example.mentoringapis.errors.ClientBadRequestError;
 import com.example.mentoringapis.errors.MentoringAuthenticationError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.upStreamModels.CreateTopicRequest;
@@ -45,7 +46,7 @@ public class TopicController {
     }
 
     @PostMapping("/update-status")
-    public ResponseEntity<List<TopicDetailResponse>> changingStatus(@RequestBody @Valid StatusChangingRequest request){
+    public ResponseEntity<List<TopicDetailResponse>> changingStatus(@RequestBody @Valid StatusChangingRequest request) throws ClientBadRequestError {
         return ResponseEntity.ok(topicService.changeStatus(request.getIds(), request.getStatus()));
     }
 

@@ -34,8 +34,8 @@ public class AdminController {
     private final AppConfigService appConfigService;
 
     @GetMapping("/configs")
-    public ResponseEntity<List<AppConfigResponse>> getConfigs(){
-        return ResponseEntity.ok(appConfigService.getAll());
+    public ResponseEntity<AppConfigResponse> getConfigs(){
+        return ResponseEntity.ok(appConfigService.getApplied());
     }
 
     @PostMapping("/configs")

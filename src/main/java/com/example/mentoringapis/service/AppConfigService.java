@@ -5,9 +5,9 @@ import com.example.mentoringapis.models.upStreamModels.AppConfigRequest;
 import com.example.mentoringapis.models.upStreamModels.AppConfigResponse;
 import com.example.mentoringapis.repositories.AppConfigRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -16,22 +16,28 @@ public class AppConfigService {
     private final AppConfigRepository appConfigRepository;
     private final AppConfig appConfig;
 
-    public List<AppConfigResponse> getAll(){
+    public AppConfigResponse getApplied(){
         return appConfigRepository.findAll()
-                .stream().map(AppConfigResponse::fromEntity)
-                .toList();
+                .stream()
+                .max(Comparator.comparing(AppConfig::getCreatedDate))
+                .map(AppConfigResponse::fromEntity)
+                .orElse(AppConfigResponse.builder().build());
     }
 
     public AppConfigResponse createNewAppConfig(AppConfigRequest appConfigRequest){
         var newConfig = new AppConfig();
         newConfig.setAutoRejectBookingDelay(appConfigRequest.getAutoRejectBookingDelay());
         newConfig.setMaxRequestedBooking(appConfigRequest.getMaxRequestedBooking());
-        newConfig.setInvitationEmailDelay(appConfigRequest.getInvitationEmailDelay());
+        newConfig.setSeminarReportEmailDelay(appConfigRequest.getInvitationEmailDelay());
+        newConfig.setMaxParticipant(appConfigRequest.getMaxParticipant());
+        newConfig.setMaxCallDuration(appConfigRequest.getMaxCallDuration());
         appConfigRepository.save(newConfig);
 
-        appConfig.setInvitationEmailDelay(newConfig.getInvitationEmailDelay());
+        appConfig.setSeminarReportEmailDelay(newConfig.getSeminarReportEmailDelay());
         appConfig.setAutoRejectBookingDelay(newConfig.getAutoRejectBookingDelay());
         appConfig.setMaxRequestedBooking(newConfig.getMaxRequestedBooking());
+        appConfig.setMaxParticipant(newConfig.getMaxParticipant());
+        appConfig.setMaxCallDuration(newConfig.getMaxCallDuration());
 
         return AppConfigResponse.fromEntity(newConfig);
     };

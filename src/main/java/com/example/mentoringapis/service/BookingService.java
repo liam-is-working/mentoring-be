@@ -163,6 +163,9 @@ public class BookingService {
     }
 
     public void createBooking(CreateBookingRequest request, UUID ownerId) throws ResourceNotFoundException, ClientBadRequestError {
+        if(request.getParticipants().size()>appConfig.getMaxParticipant())
+            throw new ClientBadRequestError(String.format("Số lượng người cho phép cho booking: %d", appConfig.getMaxParticipant()));
+
         var bookingsOfMember = bookingMenteeRepository.findAllByMenteeIdInAndStatusNotRejected(request.getParticipants());
         var mentor = userProfileRepository.findUserProfileByAccount_Id(request.getMentorId())
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Cannot find mentor with id: %s", request.getMentorId())));

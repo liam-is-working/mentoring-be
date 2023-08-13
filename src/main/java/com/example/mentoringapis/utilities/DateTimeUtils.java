@@ -45,7 +45,7 @@ public class DateTimeUtils {
             return LocalDateTime.parse(date, DEFAULT_DATE_TIME_FORMATTER).truncatedTo(ChronoUnit.MINUTES);
         } catch (DateTimeParseException e) {
             log.error(e.getMessage());
-            throw new IllegalArgumentException(e);
+            return LocalDateTime.now();
         }
     }
 
@@ -54,7 +54,7 @@ public class DateTimeUtils {
             return LocalTime.parse(time, DEFAULT_TIME_FORMATTER).truncatedTo(ChronoUnit.MINUTES);
         } catch (DateTimeParseException e) {
             log.error(e.getMessage());
-            throw new IllegalArgumentException(e);
+            return LocalTime.now();
         }
     }
 
@@ -63,7 +63,7 @@ public class DateTimeUtils {
             return LocalDate.parse(time, DEFAULT_DATE_FORMATTER);
         } catch (DateTimeParseException e) {
             log.error(e.getMessage());
-            throw new IllegalArgumentException(e);
+            return LocalDate.now();
         }
     }
 

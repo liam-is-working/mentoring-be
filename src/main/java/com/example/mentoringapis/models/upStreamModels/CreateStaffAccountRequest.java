@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Locale;
+
 @Getter
 @Setter
 public class CreateStaffAccountRequest {
@@ -18,4 +20,8 @@ public class CreateStaffAccountRequest {
     private String phoneNumber;
     @NotNull
     private Integer departmentId;
+
+    public String getEmail() {
+        return email.toLowerCase(Locale.ROOT);
+    }
 }

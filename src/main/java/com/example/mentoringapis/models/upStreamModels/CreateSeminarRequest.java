@@ -1,5 +1,7 @@
 package com.example.mentoringapis.models.upStreamModels;
 
+import com.example.mentoringapis.errors.ClientBadRequestError;
+import com.example.mentoringapis.utilities.DateTimeUtils;
 import com.example.mentoringapis.validation.CheckStringDate;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -27,5 +29,15 @@ public class CreateSeminarRequest {
     @CheckStringDate(format = DEFAULT_DATE_TIME_PATTERN)
     @NotNull
     private String startTime;
+    @CheckStringDate(format = DEFAULT_DATE_TIME_PATTERN)
+    @NotNull
+    private String endTime;
     private Set<UUID> mentorIds;
+
+    public void validate() throws ClientBadRequestError {
+        var start = DateTimeUtils.parseDate(startTime);
+        var end = DateTimeUtils.parseDate(endTime);
+        if(start.isAfter(end))
+            throw new ClientBadRequestError("startTime is after endTime");
+    }
 }

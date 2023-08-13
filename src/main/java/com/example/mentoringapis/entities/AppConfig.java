@@ -17,9 +17,12 @@ public class AppConfig {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    private int seminarReportEmailDelay;
     private int invitationEmailDelay;
     private int autoRejectBookingDelay;
     private int maxRequestedBooking;
+    private int maxParticipant;
+    private int maxCallDuration;
 
     @PrePersist
     protected void onCreate() {

@@ -172,7 +172,11 @@ public class MailService {
             return;
 
         var mentor = mentorOptional.get();
+        if(mentorNotification.getMessage()!=null && mentorNotification.getMessage().contains("seminar")) {
+            mentor.getFollowers().add(mentor);
+        }
         var recipientsJson = buildRecipientsFromUuids(mentor.getFollowers());
+
 
         recipientsJson.forEach(recipient -> {
             var request = new MailjetRequest(Emailv31.resource)

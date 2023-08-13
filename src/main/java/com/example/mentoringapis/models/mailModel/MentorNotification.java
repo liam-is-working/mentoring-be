@@ -12,7 +12,7 @@ public class MentorNotification {
     private String link;
 
     public MentorNotification(Seminar seminar, UserProfile mentor){
-        message = String.format("Mrs/Mr %s will be a speaker of the upcoming seminar named " +
+        message = String.format("Welcome Mrs/Mr %s for the upcoming seminar named " +
                 "%s", mentor.getFullName(), seminar.getName());
         link = String.format("https://studywithmentor-swm.web.app/seminars/%s", seminar.getId());
         mentorFullName = mentor.getFullName();

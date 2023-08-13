@@ -1,10 +1,7 @@
 package com.example.mentoringapis.service;
 
 import com.example.mentoringapis.controllers.SeminarController;
-import com.example.mentoringapis.entities.Account;
-import com.example.mentoringapis.entities.AppConfig;
-import com.example.mentoringapis.entities.Seminar;
-import com.example.mentoringapis.entities.UserProfile;
+import com.example.mentoringapis.entities.*;
 import com.example.mentoringapis.errors.ClientBadRequestError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.mailModel.MentorNotification;
@@ -28,7 +25,6 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -91,6 +87,12 @@ public class SeminarService {
     }
 
     public SeminarResponse update(UpdateSeminarRequest request, long seminarId, Integer departmentId) throws ClientBadRequestError, ResourceNotFoundException {
+        Department department = null;
+        if(request.getDepartmentId() != null){
+            department = departmentRepository.findById(request.getDepartmentId())
+                    .orElseThrow(() -> new ResourceNotFoundException(String.format("Cannot find department with id: %s", request.getDepartmentId())));
+        }
+
         var currentSeminar = seminarRepository.findById(seminarId)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Cannot find Seminar with id: %s", seminarId)));
 
@@ -103,8 +105,15 @@ public class SeminarService {
         ofNullable(request.getLocation()).ifPresent(currentSeminar::setLocation);
         ofNullable(request.getImageUrl()).ifPresent(currentSeminar::setImageUrl);
         ofNullable(request.getStartTime()).map(DateTimeUtils::parseDate).ifPresent(currentSeminar::setStartTime);
+        ofNullable(request.getEndTime()).map(DateTimeUtils::parseDate).ifPresent(currentSeminar::setEndTime);
         ofNullable(request.getName()).ifPresent(currentSeminar::setName);
+        ofNullable(department).ifPresent(currentSeminar::setDepartment);
         ofNullable(request.getAttachmentUrls()).ifPresent(urlSet -> currentSeminar.setAttachmentUrl(String.join(";", urlSet)));
+
+        if (currentSeminar.getStartTime().isAfter(currentSeminar.getEndTime())){
+            throw new ClientBadRequestError("startTime is after endTime");
+        }
+
         seminarRepository.save(currentSeminar);
         return SeminarResponse.fromSeminarEntity(currentSeminar);
     }
@@ -131,6 +140,8 @@ public class SeminarService {
     }
 
     public SeminarResponse create(CreateSeminarRequest request, Integer departmentId) throws ClientBadRequestError, IOException {
+        request.validate();
+
         Set<UserProfile> mentorProfiles = getMentorProfiles(request.getMentorIds());
         var newSeminar = new Seminar();
         ofNullable(mentorProfiles).ifPresent(newSeminar::setMentors);
@@ -138,6 +149,7 @@ public class SeminarService {
         newSeminar.setImageUrl(request.getImageUrl());
         newSeminar.setLocation(request.getLocation());
         newSeminar.setStartTime(DateTimeUtils.parseDate(request.getStartTime()));
+        newSeminar.setEndTime(DateTimeUtils.parseDate(request.getEndTime()));
         newSeminar.setName(request.getName());
         ofNullable(request.getAttachmentUrls()).ifPresent(urlSet -> newSeminar.setAttachmentUrl(String.join(";", urlSet)));
         if (departmentId != null) {
@@ -153,6 +165,9 @@ public class SeminarService {
                     p -> {
                         var notification = new MentorNotification(newSeminar, p);
                         var pId = p.getAccountId();
+                        //update search vector
+                        CompletableFuture.runAsync(() -> userProfileRepository.updateTsvSearch(pId.toString()));
+                        //send email to follower and mentor
                         CompletableFuture.runAsync(() -> mailService.sendMentorNotificationMail(notification, pId));
                     }
             );
@@ -192,7 +207,7 @@ public class SeminarService {
                 .sorted((o1, o2) -> {
                     var diffO1 = Math.abs(ChronoUnit.SECONDS.between(nowInVietnamLocalDateFormat(), o1.getStartTime()));
                     var diffO2 = Math.abs(ChronoUnit.SECONDS.between(nowInVietnamLocalDateFormat(), o2.getStartTime()));
-                    return Long.compare(diffO2,diffO1);
+                    return Long.compare(diffO1,diffO2);
                 }).toList();
 
 
@@ -230,7 +245,7 @@ public class SeminarService {
         var seminarsMap = mailService.accumulateSeminars(seminarIds);
         seminarsMap.forEach(
                 (id, seminar) -> {
-                    var sendTime = seminar.getStartTime().plusMinutes(appConfig.getInvitationEmailDelay());
+                    var sendTime = seminar.getEndTime().plusMinutes(appConfig.getSeminarReportEmailDelay());
                     var zonedSendTime = ZonedDateTime.of(sendTime, DateTimeUtils.VIET_NAM_ZONE);
                     BackgroundJob.schedule(zonedSendTime,() -> mailService.sendEmail(id, null));
                 }

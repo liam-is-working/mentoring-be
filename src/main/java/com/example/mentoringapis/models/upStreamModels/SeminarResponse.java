@@ -33,6 +33,7 @@ public class SeminarResponse {
     private String imageUrl;
     private String imageLink;
     private String startTime;
+    private String endTime;
     private String createdDate;
     private String updatedDate;
     private Set<MentorAccountResponse> mentors;
@@ -89,6 +90,7 @@ public class SeminarResponse {
                 .updatedDate(DateTimeUtils.localDateTimeStringFromZone(seminarEntity.getUpdatedDate()))
                 .location(seminarEntity.getLocation())
                 .startTime(seminarEntity.getStartTime().format(DEFAULT_DATE_TIME_FORMATTER))
+                .endTime(seminarEntity.getEndTime().format(DEFAULT_DATE_TIME_FORMATTER))
                 .status(getStatus(seminarEntity.getStartTime()).name())
                 .mentors(seminarEntity.getMentors().stream().map(UserProfile::getAccount).map(MentorAccountResponse::fromAccountEntity).collect(Collectors.toSet()))
                 .department(ofNullable(seminarEntity.getDepartment()).map(DepartmentRes::fromDepartmentEntity).orElse(null))
