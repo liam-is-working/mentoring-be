@@ -100,8 +100,15 @@ public class TopicService {
         var topicsToActivate = topicRepository.findAllByIdIn(ids);
 
         if(Topic.Status.DELETED.name().equals(status)){
-            if(topicsToActivate.stream().anyMatch(t -> !Topic.Status.WAITING.name().equals(t.getStatus())))
-                throw new ClientBadRequestError("DELETE TOPIC CAN ONLY EFFECT ON WAITING TOPIC");
+            if(topicsToActivate.stream().anyMatch(t -> !t.getBookings().isEmpty())){
+                throw new ClientBadRequestError("Attempt to delete topic that has booking");
+            }
+        }
+
+        if(Topic.Status.ARCHIVED.name().equals(status)){
+            if(topicsToActivate.stream().anyMatch(t -> !Topic.Status.ACCEPTED.name().equalsIgnoreCase(t.getStatus()))){
+                throw new ClientBadRequestError("Attempt to archive inactive topic");
+            }
         }
 
         topicsToActivate.forEach(topic -> topic.setStatus(Topic.Status.valueOf(status).name()));

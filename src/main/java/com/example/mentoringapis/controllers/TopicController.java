@@ -29,7 +29,7 @@ public class TopicController {
     private final TopicService topicService;
 
     @GetMapping("/by-mentor/{mentorId}")
-    public ResponseEntity getTopicByMentor(@PathVariable UUID mentorId){
+    public ResponseEntity<List<TopicDetailResponse>> getTopicByMentor(@PathVariable UUID mentorId){
         return ResponseEntity.ok(topicService.getByMentorId(mentorId));
     }
 

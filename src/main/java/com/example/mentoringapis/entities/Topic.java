@@ -7,6 +7,8 @@ import lombok.Setter;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.ZonedDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -44,6 +46,9 @@ public class Topic {
     @ManyToOne
     @JoinColumn(name = "field_id", nullable = false)
     private TopicField field;
+
+    @OneToMany(mappedBy = "topic", fetch = FetchType.LAZY)
+    private Set<Booking> bookings = new HashSet<>();
 
     @ManyToOne
     @JoinColumn(name = "mentor_id", nullable = false)

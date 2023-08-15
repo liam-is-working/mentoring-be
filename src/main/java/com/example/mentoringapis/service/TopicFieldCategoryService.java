@@ -93,20 +93,24 @@ public class TopicFieldCategoryService {
         return topicCategoryRepository.findAll();
     }
 
-    public Iterable<TopicCategory> deleteCat(long id) throws ResourceNotFoundException {
+    public Iterable<TopicCategory> deleteCat(long id) throws ResourceNotFoundException, ClientBadRequestError {
         var cat = topicCategoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("cannot find topic category id: %s", id)));
         if(cat.getTopics().isEmpty()){
             topicCategoryRepository.delete(cat);
+        }else {
+            throw new ClientBadRequestError("attempt to delete category that has topic");
         }
         return topicCategoryRepository.findAll();
     }
 
-    public Iterable<TopicField> deleteField(long id) throws ResourceNotFoundException {
+    public Iterable<TopicField> deleteField(long id) throws ResourceNotFoundException, ClientBadRequestError {
         var field = topicFieldRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("cannot find topic field id: %s", id)));
         if(field.getTopics().isEmpty()){
             topicFieldRepository.delete(field);
+        }else {
+            throw new ClientBadRequestError("attempt to delete topic that has topic");
         }
         return topicFieldRepository.findAll();
     }}

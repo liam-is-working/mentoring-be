@@ -84,12 +84,12 @@ public class AdminController {
     }
 
     @DeleteMapping("/topic-fields/{id}")
-    public ResponseEntity<Iterable<TopicField>> deleteTopicField(@PathVariable long id) throws ResourceNotFoundException {
+    public ResponseEntity<Iterable<TopicField>> deleteTopicField(@PathVariable long id) throws ResourceNotFoundException, ClientBadRequestError {
         return ResponseEntity.ok(topicFieldCategoryService.deleteField(id));
     }
 
     @DeleteMapping("/topic-categories/{id}")
-    public ResponseEntity<Iterable<TopicCategory>> deleteTopicCats(@PathVariable long id) throws ResourceNotFoundException {
+    public ResponseEntity<Iterable<TopicCategory>> deleteTopicCats(@PathVariable long id) throws ResourceNotFoundException, ClientBadRequestError {
         return ResponseEntity.ok(topicFieldCategoryService.deleteCat(id));
     }
 

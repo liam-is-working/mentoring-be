@@ -172,7 +172,8 @@ public class BookingService {
         var owner = userProfileRepository.findUserProfileByAccount_Id(ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Cannot find mentee with id: %s", ownerId)));
         var topic = topicRepository.findById(request.getTopicId())
-                .orElseThrow(() -> new ResourceNotFoundException(String.format("Cannot find topic with id: %s", request.getTopicId())));
+                .filter(t -> Topic.Status.ACCEPTED.name().equals(t.getStatus()))
+                .orElseThrow(() -> new ResourceNotFoundException(String.format("Cannot find activated topic with id: %s", request.getTopicId())));
 
         var overLimitBooking = request.getParticipants().stream()
                 .filter(id -> bookingsOfMember.stream()

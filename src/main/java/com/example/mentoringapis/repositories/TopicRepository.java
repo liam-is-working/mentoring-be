@@ -31,6 +31,7 @@ public interface TopicRepository extends CrudRepository<Topic, Long> {
             "left join fetch topic.category " +
             "left join fetch  topic.field " +
             "left join fetch topic.mentor m " +
+            "left join fetch topic.bookings " +
             "left join fetch m.account " +
             "where topic.id in ?1")
     public List<Topic> findAllByIdIn(Iterable<Long> ids);
