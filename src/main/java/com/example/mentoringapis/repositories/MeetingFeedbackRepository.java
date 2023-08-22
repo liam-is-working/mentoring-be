@@ -43,4 +43,15 @@ public interface MeetingFeedbackRepository extends JpaRepository<MeetingFeedback
             "left join fetch rec.account " +
             "where booking.id = ?1")
     List<MeetingFeedback> findAllByBooking(Long bookingId);
+
+    @Query(value = "select receiver_id as mentorId, giver_id as menteeId, avg(rating) as avg\n" +
+            "from meeting_feedbacks mb\n" +
+            "group by (receiver_id, giver_id)", nativeQuery = true)
+    List<AverageRating> getAvgRating();
+
+    interface AverageRating{
+        UUID getMentorid();
+        UUID getMenteeid();
+        Float getAvg();
+    }
 }

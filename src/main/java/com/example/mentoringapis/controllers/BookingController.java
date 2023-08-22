@@ -38,6 +38,14 @@ public class BookingController {
         return ResponseEntity.ok(userProfileService.getMentorCards(searchString));
     }
 
+    @GetMapping("/mentors-recommend")
+    public ResponseEntity<MentorListResponse> getMentors(@RequestParam(required = false) String[] searchString,Authentication authentication) throws InterruptedException, MentoringAuthenticationError {
+        UUID currentUserId = UUID.randomUUID();
+        if(authentication!=null)
+         currentUserId = AuthorizationUtils.getCurrentUserUuid(authentication);
+        return ResponseEntity.ok(userProfileService.getRecommendation(currentUserId,searchString));
+    }
+
     @GetMapping("/{bookingId}/logs")
     public ResponseEntity<List<MeetingLogResponse>> getLogs(@PathVariable long bookingId){
         return ResponseEntity.ok(bookingService.getMeetingLogs(bookingId));
@@ -51,10 +59,12 @@ public class BookingController {
 
     @CrossOrigin
     @PostMapping(produces = {"application/json"})
-    public ResponseEntity createBooking(Authentication authentication, @RequestBody CreateBookingRequest request) throws ResourceNotFoundException, MentoringAuthenticationError {
-        var currentUserId = AuthorizationUtils.getCurrentUserUuid(authentication);
+    public ResponseEntity createBooking(Authentication authentication, @RequestBody CreateBookingRequest request) throws ResourceNotFoundException, MentoringAuthenticationError, ClientBadRequestError {
+        var currentUser = AuthorizationUtils.getCurrentUser(authentication);
+        if(!currentUser.getRole().equalsIgnoreCase("STUDENT"))
+            throw new ClientBadRequestError("Only Mentee can make booking");
         try {
-            bookingService.createBooking(request, currentUserId);
+            bookingService.createBooking(request, currentUser.getAccount().getId());
         } catch (ClientBadRequestError error) {
             return ResponseEntity.badRequest().body(Map.of("errorMessage", error.getErrorMessages(),
                     "body", ofNullable(error.getDetails()).orElse("") ));

@@ -25,6 +25,8 @@ public class CreateScheduleRequest {
 
 
     public void validate() throws ClientBadRequestError {
+        if(startTimeAsLocalTime().compareTo(LocalTime.of(23,0))>=0)
+            throw new ClientBadRequestError("startTime must be before 23:00:00");
         if(startDateAsLocalDate().compareTo(endDateAsLocalDate())>0)
             throw new ClientBadRequestError("startDate must be before or equal endDate");
         if(daily && weekly){

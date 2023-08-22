@@ -4,17 +4,21 @@ import com.example.mentoringapis.entities.*;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.upStreamModels.MentorListResponse;
 import com.example.mentoringapis.models.upStreamModels.*;
+import com.example.mentoringapis.repositories.DepartmentRepository;
 import com.example.mentoringapis.repositories.MentorMenteeRepository;
 import com.example.mentoringapis.repositories.UserProfileRepository;
 import com.example.mentoringapis.utilities.DateTimeUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.cloud.bigquery.*;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
 import com.jayway.jsonpath.TypeRef;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
@@ -23,13 +27,19 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.Optional.ofNullable;
+
 @Service
 @RequiredArgsConstructor
 public class UserProfileService {
     private final UserProfileRepository userProfileRepository;
     private final FireStoreService fireStoreService;
     private final MentorMenteeRepository mentorMenteeRepository;
+    private final DepartmentRepository departmentRepository;
     private final ObjectMapper objectMapper;
+    private final BigQuery bigQuery;
+    private final AppConfig appConfig;
+
 
     public MentorAccountResponse updateMentor(UpdateMentorProfileRequest request, UUID mentorId) throws ResourceNotFoundException {
         return MentorAccountResponse.fromAccountEntity(updateAccount(request, mentorId));
@@ -41,12 +51,21 @@ public class UserProfileService {
 
     private Account updateAccount(UpdateMentorProfileRequest request, UUID mentorId) throws ResourceNotFoundException {
         var profileToUpdate = userProfileRepository.findUserProfileByAccount_Id(mentorId);
+        Department department = null;
+        if(request.getDepartmentId() != null){
+            department = departmentRepository.findById(request.getDepartmentId())
+                    .orElseThrow(() -> new ResourceNotFoundException(String.format("Cannot find department with id %s", request.getDepartmentId())));
+        }
         return profileToUpdate.map(
                 profile -> {
                     var account = profile.getAccount();
-                    Optional.ofNullable(request.getPhoneNum()).ifPresent(profile::setPhoneNum);
-                    Optional.ofNullable(request.getFullName()).ifPresent(profile::setFullName);
-                    Optional.ofNullable(request.getStatus()).ifPresent(account::setStatus);
+                    ofNullable(request.getPhoneNum()).ifPresent(profile::setPhoneNum);
+                    ofNullable(request.getFullName()).ifPresent(profile::setFullName);
+                    ofNullable(request.getStatus()).ifPresent(account::setStatus);
+                    if(request.getDepartmentId() != null){
+                        var departmentChange = departmentRepository.findById(request.getDepartmentId()).orElse(account.getDepartment());
+                        account.setDepartment(departmentChange);
+                    }
                     userProfileRepository.save(profile);
 
                     fireStoreService.updateUserProfile(profile.getFullName(), null, account.getRole(), account.getEmail(),mentorId);
@@ -64,11 +83,12 @@ public class UserProfileService {
         return userProfileRepository.findUserProfileByAccount_Id(profileId)
                 .map(prof -> {
                     var isNameTheSame = Objects.equals(request.getFullName(),prof.getFullName());
-                    prof.setFullName(request.getFullName());
-                    prof.setGender(request.getGender());
-                    prof.setAvatarUrl(request.getAvatarUrl());
-                    prof.setCoverUrl(request.getCoverUrl());
-                    prof.setDescription(request.getDescription());
+                    ofNullable(request.getFullName()).ifPresent(prof::setFullName);
+                    ofNullable(request.getGender()).ifPresent(prof::setGender);
+                    ofNullable(request.getAvatarUrl()).ifPresent(prof::setAvatarUrl);
+                    ofNullable(request.getCoverUrl()).ifPresent(prof::setCoverUrl);
+                    ofNullable(request.getPhoneNumber()).ifPresent(prof::setPhoneNum);
+                    ofNullable(request.getDescription()).ifPresent(prof::setDescription);
                     if(request.getActivateAccount())
                         prof.getAccount().setStatus(Account.Status.ACTIVATED.name());
                     if(request.getDob() != null){
@@ -81,7 +101,7 @@ public class UserProfileService {
                     fireStoreService.updateUserProfile(request.getFullName(), request.getAvatarUrl(),
                             prof.getAccount().getRole(), prof.getAccount().getEmail(), profileId);
                     return userProfileRepository.save(prof);
-                }).map(UserProfileResponse::fromUserProfile).orElse(null);
+                }).map(UserProfileResponse::fromUserProfileMinimal).orElse(null);
     }
 
     public UserProfileResponse findByUUID(UUID id){
@@ -93,7 +113,7 @@ public class UserProfileService {
 
     public List<UserProfileResponse> getAllMenteeByEmail(String email){
         var menteeProfs = userProfileRepository.searchMenteeByEmail(email);
-        return menteeProfs.stream().map(UserProfileResponse::fromUserProfile)
+        return menteeProfs.stream().map(UserProfileResponse::fromUserProfileMinimal)
                 .toList();
     }
 
@@ -185,7 +205,7 @@ public class UserProfileService {
                 .orElse(null);
     }
 
-    private MentorListResponse.MentorCard mentorCardFromEntity(UserProfile mentor){
+    public MentorListResponse.MentorCard mentorCardFromEntity(UserProfile mentor){
         return MentorListResponse.MentorCard
                 .builder()
                 .avatarUrl(mentor.getAvatarUrl())
@@ -199,15 +219,90 @@ public class UserProfileService {
                 .topics(mentor.getTopics()
                         .stream()
                         .filter(topic -> topic.getStatus().equals(Topic.Status.ACCEPTED.name()))
+                        .sorted((o1, o2) -> o2.getBookings().size() - o1.getBookings().size())
                         .map(TopicDetailResponse::fromTopicEntityNoMentor)
                         .toList())
                 .build();
     }
 
+    public MentorListResponse getRecommendation(UUID menteeId, String[] searchString) throws InterruptedException {
+        if(searchString == null)
+            searchString = new String[]{};
+        var sanitizedSearchStrings = Arrays.stream(searchString).filter(Objects::nonNull)
+                .map(String::toUpperCase)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+
+        var recommendedList = new ArrayList<UUID>();
+
+        var queryString = String.format("SELECT f0_ FROM " +
+                "`growthme-392303.bigquerypublic.recommendation_result` " +
+                "where mentee_id = '%s'", menteeId);
+        QueryJobConfiguration queryConfig =
+                QueryJobConfiguration.newBuilder(queryString)
+                        .setUseLegacySql(false)
+                        .build();
+
+        JobId jobId = JobId.of(UUID.randomUUID().toString());
+        Job queryJob = bigQuery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
+
+
+        var following = mentorMenteeRepository.findAllByMenteeId(menteeId).stream().map(MentorMentee::getMentorId).collect(Collectors.toList());
+        var topMentors = userProfileRepository.getTopMentors().stream().filter(id -> !following.contains(id)).collect(Collectors.toList());
+
+        queryJob = queryJob.waitFor();
+
+        // Get the results.
+        try{
+            TableResult result = queryJob.getQueryResults();
+            for (var row : result.iterateAll().iterator().next().get(0).getRepeatedValue()){
+                recommendedList.add(UUID.fromString(row.getRecordValue().get(0).getStringValue()));
+            }
+        }catch (Exception ignored){}
+
+        topMentors.removeIf(recommendedList::contains);
+        if(recommendedList.size()<appConfig.getMaxMentorRecommendation()){
+            var toAdd = appConfig.getMaxMentorRecommendation()-recommendedList.size();
+            recommendedList.addAll(topMentors.subList(0, Math.min(toAdd, topMentors.size())));
+        }
+
+        var mentors = userProfileRepository.getAllActivatedMentors(recommendedList)
+                .stream().collect(Collectors.toMap(UserProfile::getAccountId, m-> m));
+
+        var returnVal = new MentorListResponse();
+        returnVal.setMentorCards(recommendedList.stream()
+                .map(mentors::get)
+                .filter(Objects::nonNull)
+                .map(this::mentorCardFromEntity)
+                .filter(card ->
+                {
+                    if (sanitizedSearchStrings.isEmpty())
+                        return true;
+                    return card.getSearchString()
+                            .stream()
+                            .anyMatch(s -> sanitizedSearchStrings.stream().anyMatch(s::contains));
+
+                })
+                .toList());
+        return returnVal;
+
+        // Print all pages of the results.
+//        for (FieldValueList row : result.iterateAll()) {
+//            // String type
+//            String url = row.get("url").getStringValue();
+//            String viewCount = row.get("view_count").getStringValue();
+//            System.out.printf("%s : %s views\n", url, viewCount);
+//        }
+    }
+
     public MentorListResponse getMentorCards(){
         var mentors = userProfileRepository.getAllActivatedMentors();
-        var mentorCards = mentors.stream()
-                .map(this::mentorCardFromEntity).toList();
+        var mentorCards = mentors.parallelStream()
+                .map(this::mentorCardFromEntity)
+                .sorted((m1,m2) -> Double.compare(m2.getRatingOptional().orElse(0),m1.getRatingOptional().orElse(0)))
+                .sorted((m1,m2) -> m2.getFollowers()-m1.getFollowers())
+                .toList();
 
         var response = new MentorListResponse();
         response.setMentorCards(mentorCards);
@@ -215,10 +310,18 @@ public class UserProfileService {
     }
 
     public MentorListResponse getMentorCards(String[] searchString){
-        if(searchString==null || searchString.length==0)
+        if(searchString == null)
+            searchString = new String[]{};
+        var sanitizedSearchStrings = Arrays.stream(searchString).filter(Objects::nonNull)
+                .map(String::toUpperCase)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+
+        if(sanitizedSearchStrings.isEmpty()|| Strings.isBlank(String.join(" ", sanitizedSearchStrings)))
             return getMentorCards();
 
-        var searchResult = userProfileRepository.searchAllActivatedMentors(String.join(" ", searchString));
+        var searchResult = userProfileRepository.searchAllActivatedMentors(String.join(" ", sanitizedSearchStrings).trim());
         searchResult.sort((r1,r2) -> Float.compare(r2.getRank(),r1.getRank()));
 
 
@@ -230,6 +333,7 @@ public class UserProfileService {
         var response  = new MentorListResponse();
         var mentorCards = searchResult.stream()
                 .map(sR  -> mentorsMap.get(sR.getAccountId()))
+                .filter(Objects::nonNull)
                 .map(this::mentorCardFromEntity).toList();
         response.setMentorCards(mentorCards);
         return response;

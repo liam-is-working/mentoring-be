@@ -17,7 +17,7 @@ public class ValidatorUtilsTest {
     };
 
     @ParameterizedTest
-    @ValueSource(strings = {"sesesz151336@fpt.edu.vn", "sasasaaaaa@fpt.edu.vn", "ssss151336@fpt.edu"}) // six numbers
+    @ValueSource(strings = {"sesesz112@fpt.edu.vn", "sasasaaaaa@fpt.edu.vn", "ssss12@fpt.edu"}) // six numbers
     public void isFptStudentEMail_givenInvalidEmail_shouldReturnFalse(String email){
         assertThat(ValidatorUtils.isFptStudentEMail(email)).isFalse();
     };

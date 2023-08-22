@@ -25,8 +25,16 @@ public class DepartmentService {
     private final DepartmentRepository departmentRepository;
     private final AccountsRepository accountsRepository;
 
-    public DepartmentResponse createDepartment(CreateDepartmentRequest request) throws ResourceNotFoundException {
+    public List<DepartmentResponse> getAll(){
+        return departmentRepository.findAllDepartments().stream().map(DepartmentResponse::fromDepartment).toList();
+    }
+
+    public DepartmentResponse createDepartment(CreateDepartmentRequest request) throws ResourceNotFoundException, ClientBadRequestError {
         var staffAccounts = accountsRepository.findAllById(request.getStaffIds());
+        var dep = departmentRepository.findByNameEquals(request.getName());
+        if(!dep.isEmpty())
+            throw new ClientBadRequestError(String.format("Duplicate department name: %s", request.getName()));
+
         for (Account acc : staffAccounts) {
             if(!Account.Role.STAFF.name().equals(acc.getRole()))
                 throw new ResourceNotFoundException(String.format("Cannot find satff with id: %s",acc.getId()));

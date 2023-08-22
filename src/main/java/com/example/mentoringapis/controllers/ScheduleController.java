@@ -25,13 +25,17 @@ public class ScheduleController {
     @PostMapping()
     public ResponseEntity createSchedule(Authentication authentication, @RequestBody CreateScheduleRequest createScheduleRequest) throws ResourceNotFoundException, ClientBadRequestError, MentoringAuthenticationError {
         createScheduleRequest.validate();
-        var currentUserId = AuthorizationUtils.getCurrentUserUuid(authentication);
-        scheduleService.createSchedule(currentUserId, createScheduleRequest);
+        var currentUser = AuthorizationUtils.getCurrentUser(authentication);
+        if(!currentUser.getRole().equalsIgnoreCase("MENTOR")){
+            throw new ClientBadRequestError("Only Mentor can have available time");
+        }
+        scheduleService.createSchedule(currentUser.getAccount().getId(), createScheduleRequest);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{schedule_id}")
     public ResponseEntity editSchedule(Authentication authentication, @RequestBody CreateScheduleRequest createScheduleRequest, @PathVariable long schedule_id) throws ResourceNotFoundException, ClientBadRequestError, MentoringAuthenticationError {
+        createScheduleRequest.validate();
         var currentUserId = AuthorizationUtils.getCurrentUserUuid(authentication);
         scheduleService.editSchedule(currentUserId,schedule_id, createScheduleRequest);
         return ResponseEntity.ok().build();
@@ -39,6 +43,7 @@ public class ScheduleController {
 
     @PostMapping("/create-exception")
     public ResponseEntity createExcDate(Authentication authentication, @RequestBody @Valid CreateExceptionDateRequest request) throws ResourceNotFoundException, ClientBadRequestError, MentoringAuthenticationError {
+        request.validate();
         var currentUserId = AuthorizationUtils.getCurrentUserUuid(authentication);
         scheduleService.addExceptionDate(currentUserId, request);
         return ResponseEntity.ok().build();
@@ -46,17 +51,11 @@ public class ScheduleController {
 
     @PostMapping("/exception/{excId}")
     public ResponseEntity updateExcDate(Authentication authentication, @RequestBody @Valid UpdateExceptionDateRequest request, @PathVariable long excId) throws ResourceNotFoundException, ClientBadRequestError, MentoringAuthenticationError {
+        request.validate();
         var currentUserId = AuthorizationUtils.getCurrentUserUuid(authentication);
         scheduleService.editExceptionDate(currentUserId, excId, request);
         return ResponseEntity.ok().build();
     }
-
-//    @PostMapping("/delete")
-//    public ResponseEntity delete(Authentication authentication, @RequestBody DeleteScheduleRequest deleteScheduleRequest) throws ResourceNotFoundException {
-//        var currentUserId = ((CustomUserDetails) authentication.getPrincipal()).getAccount().getId();
-//        scheduleService.removeSchedule(currentUserId, deleteScheduleRequest);
-//        return ResponseEntity.ok().build();
-//    }
 
     @DeleteMapping("/{scheduleId}")
     public ResponseEntity deleteSchedule(Authentication authentication, @PathVariable long scheduleId) throws ResourceNotFoundException, MentoringAuthenticationError {

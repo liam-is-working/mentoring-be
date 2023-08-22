@@ -23,6 +23,8 @@ public class AppConfig {
     private int maxRequestedBooking;
     private int maxParticipant;
     private int maxCallDuration;
+    private int reminderEmailDelay;
+    private int maxMentorRecommendation;
 
     @PrePersist
     protected void onCreate() {

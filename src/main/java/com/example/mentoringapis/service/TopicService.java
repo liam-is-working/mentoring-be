@@ -92,6 +92,15 @@ public class TopicService {
         return topicRepository.findALlByMentorId(mentorId)
                 .stream()
                 .filter(topic -> topic.getStatus().equals(Topic.Status.ACCEPTED.name()))
+                .sorted((o1, o2) -> o2.getBookings().size() - o1.getBookings().size())
+                .map(TopicDetailResponse::fromTopicEntityNoMentor)
+                .collect(Collectors.toList());
+    }
+
+    public List<TopicDetailResponse> getMyTopics(UUID mentorId){
+        return topicRepository.findALlByMentorId(mentorId)
+                .stream()
+                .filter(topic -> !topic.getStatus().equals(Topic.Status.DELETED.name()))
                 .map(TopicDetailResponse::fromTopicEntityNoMentor)
                 .collect(Collectors.toList());
     }

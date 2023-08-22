@@ -33,6 +33,12 @@ public class TopicController {
         return ResponseEntity.ok(topicService.getByMentorId(mentorId));
     }
 
+    @GetMapping("/by-mentor/own")
+    public ResponseEntity<List<TopicDetailResponse>> getTopicByMentor(Authentication authentication) throws MentoringAuthenticationError {
+        var currentUuid = AuthorizationUtils.getCurrentUserUuid(authentication);
+        return ResponseEntity.ok(topicService.getMyTopics(currentUuid));
+    }
+
     @PostMapping()
     public ResponseEntity<TopicDetailResponse> createTopic(@RequestBody CreateTopicRequest topicRequest, Authentication authentication) throws ResourceNotFoundException, MentoringAuthenticationError {
         var currentUuid = AuthorizationUtils.getCurrentUserUuid(authentication);

@@ -32,7 +32,7 @@ public class DepartmentResponse {
                 .name(department.getName())
                 .seminarIds(department.getSeminars().stream().map(Seminar::getId).collect(Collectors.toSet()))
                 .staffIds(department.getStaffAccounts().stream().map(Account::getId).collect(Collectors.toSet()))
-                .staffs(department.getStaffAccounts().stream().map(Account::getUserProfile).map(UserProfileResponse::fromUserProfile).collect(Collectors.toSet()))
+                .staffs(department.getStaffAccounts().stream().map(Account::getUserProfile).map(UserProfileResponse::fromUserProfileMinimal).collect(Collectors.toSet()))
                 .build();
     }
 }

@@ -129,7 +129,7 @@ public class ScheduleService {
     }
 
     public static boolean doesCollapseDateRange(LocalDate startA, LocalDate endA, LocalDate startB, LocalDate endB){
-        return startA.compareTo(endB)<0 && endA.compareTo(startB)>0 || (startA.equals(startB));
+        return startA.compareTo(endB)<=0 && endA.compareTo(startB)>=0 || (startA.equals(startB));
     }
 
     public static boolean doesCollapseTimeRange(LocalTime startA, LocalTime endA, LocalTime startB, LocalTime endB){

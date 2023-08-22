@@ -25,14 +25,11 @@ public class DepartmentController {
 
     @GetMapping
     public ResponseEntity<List<DepartmentResponse>> getAll() {
-        return ResponseEntity.ok(departmentRepository
-                .findAll().stream()
-                .map(DepartmentResponse::fromDepartment)
-                .collect(Collectors.toList()));
+        return ResponseEntity.ok(departmentService.getAll());
     }
 
     @PostMapping
-    public ResponseEntity<DepartmentResponse> create(@RequestBody CreateDepartmentRequest request) throws ResourceNotFoundException {
+    public ResponseEntity<DepartmentResponse> create(@RequestBody CreateDepartmentRequest request) throws ResourceNotFoundException, ClientBadRequestError {
         return ResponseEntity.ok(departmentService.createDepartment(request));
     }
 

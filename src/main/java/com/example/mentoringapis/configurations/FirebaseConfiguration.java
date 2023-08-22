@@ -1,6 +1,8 @@
 package com.example.mentoringapis.configurations;
 
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.storage.Bucket;
 import com.google.firebase.FirebaseApp;
@@ -32,6 +34,11 @@ public class FirebaseConfiguration {
     @Bean
     FirebaseAuth firebaseAuth() throws IOException {
         return FirebaseAuth.getInstance(firebaseApp());
+    }
+
+    @Bean
+    BigQuery bigQuery() {
+        return BigQueryOptions.getDefaultInstance().getService();
     }
 
     @Bean

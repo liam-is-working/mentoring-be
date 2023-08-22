@@ -29,8 +29,8 @@ public class MeetingFeedbackResponse {
         public static MeetingFeedbackCard fromEntity(MeetingFeedback entity){
             return MeetingFeedbackCard.builder()
                     .bookingCard(BookingListResponse.BookingCard.fromBookingEntity(entity.getBooking()))
-                    .receiver(UserProfileResponse.fromUserProfile(entity.getReceiver()))
-                    .giver(UserProfileResponse.fromUserProfile(entity.getGiver()))
+                    .receiver(UserProfileResponse.fromUserProfileMinimal(entity.getReceiver()))
+                    .giver(UserProfileResponse.fromUserProfileMinimal(entity.getGiver()))
                     .id(entity.getId())
                     .createdDate(localDateTimeStringFromZone(entity.getCreatedDate()))
                     .updatedDate(localDateTimeStringFromZone(entity.getUpdatedDate()))

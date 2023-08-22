@@ -220,7 +220,7 @@ public class MailService {
                 .put("bookingDate", booking.bookDateAsString())
                 .put("startTime", booking.startTimeAsString())
                 .put("endTime", booking.endTimeAsString())
-                .put("detailLink", "https://studywithmentor-swm.web.app/booking/details/"+booking.getId())
+                .put("detailLink", "https://studywithmentor-swm.web.app/booking/list/"+booking.getId())
                 .put("allBookingLink", "https://studywithmentor-swm.web.app/booking/list")
                 .put("status", booking.getStatus());
     }

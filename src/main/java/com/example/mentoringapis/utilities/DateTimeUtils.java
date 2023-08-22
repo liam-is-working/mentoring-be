@@ -25,7 +25,11 @@ public class DateTimeUtils {
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
     public static String localDateTimeStringFromZone(ZonedDateTime zonedDateTime){
-        return LocalDateTime.ofInstant(zonedDateTime.toInstant(), DateTimeUtils.VIET_NAM_ZONE).format(DateTimeUtils.DEFAULT_DATE_TIME_FORMATTER);
+        try {
+            return LocalDateTime.ofInstant(zonedDateTime.toInstant(), DateTimeUtils.VIET_NAM_ZONE).format(DateTimeUtils.DEFAULT_DATE_TIME_FORMATTER);
+        }catch (Exception ignored){
+            return LocalDateTime.ofInstant(nowInVietnam().toInstant(), DateTimeUtils.VIET_NAM_ZONE).format(DateTimeUtils.DEFAULT_DATE_TIME_FORMATTER);
+        }
     }
 
     public static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat(DEFAULT_DATE_TIME_PATTERN);

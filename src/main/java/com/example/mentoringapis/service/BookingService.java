@@ -117,12 +117,12 @@ public class BookingService {
         var bookings = bookingRepository.findAllById(bookingIds);
 //            bookings.forEach(b -> CompletableFuture.runAsync(() -> mailService.sendReminderEmail(b.getId())));
         bookings.forEach(b -> {
-            var sendTime = b.getBookingDate().atTime(b.getStartTime()).minusHours(DEFAULT_REMINDER_DELAY_HOUR);
+            var sendTime = b.getBookingDate().atTime(b.getStartTime()).minusMinutes(appConfig.getReminderEmailDelay());
             var zonedSendTime = ZonedDateTime.of(sendTime, DateTimeUtils.VIET_NAM_ZONE);
             var bId = b.getId();
 
             var tempZoneSendTime = DateTimeUtils.nowInVietnam().plusMinutes(2);
-                BackgroundJob.schedule(tempZoneSendTime,() -> mailService.sendReminderEmail(bId));
+            BackgroundJob.schedule(zonedSendTime,() -> mailService.sendReminderEmail(bId));
         });
     }
 

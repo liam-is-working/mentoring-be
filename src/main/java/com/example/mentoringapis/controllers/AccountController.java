@@ -1,13 +1,16 @@
 package com.example.mentoringapis.controllers;
 
+import com.example.mentoringapis.errors.ClientBadRequestError;
 import com.example.mentoringapis.errors.MentoringAuthenticationError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.upStreamModels.*;
 import com.example.mentoringapis.service.AccountService;
 import com.example.mentoringapis.service.AuthService;
+import com.example.mentoringapis.utilities.AuthorizationUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -43,6 +46,16 @@ public class AccountController {
     @PostMapping(value = "/mentors/invalidate")
     public ResponseEntity<List<UUID>> invalidateMentors(@RequestBody @Valid UuidListRequest uuidListRequest) throws ResourceNotFoundException {
         return ResponseEntity.ok(accountService.invalidateMentors(uuidListRequest.getIds()));
+    }
+
+    @DeleteMapping(value = "/{uuid}")
+    public ResponseEntity deleteAccount(@PathVariable UUID uuid, Authentication authentication) throws ClientBadRequestError, ResourceNotFoundException, MentoringAuthenticationError {
+        var currentUserId = AuthorizationUtils.getCurrentUserUuid(authentication);
+
+        if(accountService.deleteAccount(uuid))
+            return ResponseEntity.ok(uuid);
+        else
+            return ResponseEntity.status(409).build();
     }
 
 }

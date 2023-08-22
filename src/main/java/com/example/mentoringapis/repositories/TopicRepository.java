@@ -20,6 +20,7 @@ public interface TopicRepository extends CrudRepository<Topic, Long> {
 
     @NotNull
     @Query("select topic from Topic topic " +
+            "left join fetch topic.bookings " +
             "left join fetch topic.category " +
             "left join fetch  topic.field " +
             "left join fetch topic.mentor m " +

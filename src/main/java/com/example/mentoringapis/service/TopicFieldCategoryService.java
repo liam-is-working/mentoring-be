@@ -5,6 +5,8 @@ import com.example.mentoringapis.entities.TopicCategory;
 import com.example.mentoringapis.entities.TopicField;
 import com.example.mentoringapis.errors.ClientBadRequestError;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
+import com.example.mentoringapis.models.upStreamModels.TopicCategoryResponse;
+import com.example.mentoringapis.models.upStreamModels.TopicFieldResponse;
 import com.example.mentoringapis.repositories.TopicCategoryRepository;
 import com.example.mentoringapis.repositories.TopicFieldRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +40,7 @@ public class TopicFieldCategoryService {
     }
 
 
-    public Iterable<TopicField> createTopicField(AdminController.CreateSimpleEntityRequest request) throws ClientBadRequestError {
+    public Iterable<TopicFieldResponse> createTopicField(AdminController.CreateSimpleEntityRequest request) throws ClientBadRequestError {
         var fields = getALlFieldsAndCheckDuplicate(request.getName());
 
 
@@ -46,10 +48,11 @@ public class TopicFieldCategoryService {
         newField.setName(request.getName());
 
         topicFieldRepository.save(newField);
-        return topicFieldRepository.findAll();
+        return StreamSupport.stream(fields.spliterator(),false)
+                .map(TopicFieldResponse::fromEntity).toList();
     }
 
-    public Iterable<TopicField> editTopicField(AdminController.CreateSimpleEntityRequest request, long id) throws ClientBadRequestError {
+    public Iterable<TopicFieldResponse> editTopicField(AdminController.CreateSimpleEntityRequest request, long id) throws ClientBadRequestError {
         var fields = getALlFieldsAndCheckDuplicate(request.getName());
 
         fields.forEach(f -> {
@@ -59,28 +62,22 @@ public class TopicFieldCategoryService {
             }
         });
 
-        return topicFieldRepository.findAll();
+        return StreamSupport.stream(fields.spliterator(),false)
+                .map(TopicFieldResponse::fromEntity).toList();
     }
 
-    private void updateSearchVectorWhenTopicFieldChange(long id){
-        var field = topicFieldRepository.findById(id)
-                .orElse(null);
-        if(field == null)
-            return;
-
-    }
-
-    public Iterable<TopicCategory> createTopicCategory(AdminController.CreateSimpleEntityRequest request) throws ClientBadRequestError {
+    public Iterable<TopicCategoryResponse> createTopicCategory(AdminController.CreateSimpleEntityRequest request) throws ClientBadRequestError {
         var cats = getALlCatsAndCheckDuplicate(request.getName());
 
         var newCat = new TopicCategory();
         newCat.setName(request.getName());
 
         topicCategoryRepository.save(newCat);
-        return topicCategoryRepository.findAll();
+        return StreamSupport.stream(cats.spliterator(),false)
+                .map(TopicCategoryResponse::fromEntity).toList();
     }
 
-    public Iterable<TopicCategory> editTopicCats(AdminController.CreateSimpleEntityRequest request, long id) throws ClientBadRequestError {
+    public Iterable<TopicCategoryResponse> editTopicCats(AdminController.CreateSimpleEntityRequest request, long id) throws ClientBadRequestError {
         var cats = getALlCatsAndCheckDuplicate(request.getName());
 
         cats.forEach(f -> {
@@ -90,10 +87,11 @@ public class TopicFieldCategoryService {
             }
         });
 
-        return topicCategoryRepository.findAll();
+        return StreamSupport.stream(cats.spliterator(),false)
+                .map(TopicCategoryResponse::fromEntity).toList();
     }
 
-    public Iterable<TopicCategory> deleteCat(long id) throws ResourceNotFoundException, ClientBadRequestError {
+    public Iterable<TopicCategoryResponse> deleteCat(long id) throws ResourceNotFoundException, ClientBadRequestError {
         var cat = topicCategoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("cannot find topic category id: %s", id)));
         if(cat.getTopics().isEmpty()){
@@ -101,10 +99,11 @@ public class TopicFieldCategoryService {
         }else {
             throw new ClientBadRequestError("attempt to delete category that has topic");
         }
-        return topicCategoryRepository.findAll();
+        return StreamSupport.stream(topicCategoryRepository.findAll().spliterator(),false)
+                .map(TopicCategoryResponse::fromEntity).toList();
     }
 
-    public Iterable<TopicField> deleteField(long id) throws ResourceNotFoundException, ClientBadRequestError {
+    public Iterable<TopicFieldResponse> deleteField(long id) throws ResourceNotFoundException, ClientBadRequestError {
         var field = topicFieldRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("cannot find topic field id: %s", id)));
         if(field.getTopics().isEmpty()){
@@ -112,5 +111,5 @@ public class TopicFieldCategoryService {
         }else {
             throw new ClientBadRequestError("attempt to delete topic that has topic");
         }
-        return topicFieldRepository.findAll();
-    }}
+        return StreamSupport.stream(topicFieldRepository.findAll().spliterator(),false)
+                .map(TopicFieldResponse::fromEntity).toList();    }}

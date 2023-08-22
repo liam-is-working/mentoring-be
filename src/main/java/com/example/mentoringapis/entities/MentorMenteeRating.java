@@ -3,6 +3,7 @@ package com.example.mentoringapis.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.domain.Persistable;
 
 import java.util.UUID;
 
@@ -11,7 +12,7 @@ import java.util.UUID;
 @Setter
 @IdClass(MenteeMentorId.class)
 @Entity
-public class MentorMenteeRating {
+public class MentorMenteeRating implements Persistable<MenteeMentorId> {
     @Id
     @Column(name = "mentor_id")
     private UUID mentorId;
@@ -20,5 +21,16 @@ public class MentorMenteeRating {
     @Column(name = "mentee_id")
     private UUID menteeId;
 
-    private float rating;
+    private Float rating;
+
+
+    @Override
+    public MenteeMentorId getId() {
+        return new MenteeMentorId(mentorId, menteeId);
+    }
+
+    @Override
+    public boolean isNew() {
+        return true;
+    }
 }

@@ -47,7 +47,7 @@ public class StaffAccountResponse {
                 .createdDate(DateTimeUtils.localDateTimeStringFromZone(account.getUserProfile().getCreatedDate()))
                 .updatedDate(DateTimeUtils.localDateTimeStringFromZone(account.getUserProfile().getUpdatedDate()))
                 .department(Optional.ofNullable(account.getDepartment()).map(DepartmentRes::fromDepartment).orElse(null))
-                .profile(Optional.ofNullable(account.getUserProfile()).map(prof -> UserProfileResponse.fromUserProfile(prof)).orElse(null))
+                .profile(Optional.ofNullable(account.getUserProfile()).map(UserProfileResponse::fromUserProfileMinimal).orElse(null))
                 .build();
     }
 }

@@ -16,6 +16,7 @@ public class UserProfileUpdateRequest {
     @CheckStringDate
     private String dob;
     private Gender gender;
+    private String phoneNumber;
     private String avatarUrl;
     private String coverUrl;
     private Boolean activateAccount = false;

@@ -31,6 +31,9 @@ public class AppConfigService {
         newConfig.setSeminarReportEmailDelay(appConfigRequest.getInvitationEmailDelay());
         newConfig.setMaxParticipant(appConfigRequest.getMaxParticipant());
         newConfig.setMaxCallDuration(appConfigRequest.getMaxCallDuration());
+        newConfig.setInvitationEmailDelay(appConfigRequest.getInvitationEmailDelay());
+        newConfig.setMaxMentorRecommendation(appConfigRequest.getMaxMentorRecommendation());
+        newConfig.setReminderEmailDelay(appConfig.getReminderEmailDelay());
         appConfigRepository.save(newConfig);
 
         appConfig.setSeminarReportEmailDelay(newConfig.getSeminarReportEmailDelay());
@@ -38,6 +41,9 @@ public class AppConfigService {
         appConfig.setMaxRequestedBooking(newConfig.getMaxRequestedBooking());
         appConfig.setMaxParticipant(newConfig.getMaxParticipant());
         appConfig.setMaxCallDuration(newConfig.getMaxCallDuration());
+        appConfig.setInvitationEmailDelay(newConfig.getInvitationEmailDelay());
+        appConfig.setMaxMentorRecommendation(newConfig.getMaxMentorRecommendation());
+        appConfig.setReminderEmailDelay(newConfig.getReminderEmailDelay());
 
         return AppConfigResponse.fromEntity(newConfig);
     };
