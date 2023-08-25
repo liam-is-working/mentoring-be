@@ -97,8 +97,8 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, UUID> 
 
 
     @Query(value = "select user_profiles.account_id as accountId, ts_rank_cd(tsvector_search, query) as rank " +
-            "from user_profiles left join accounts a on user_profiles.account_id = a.id , plainto_tsquery('simple', ?1) query " +
-            "where (query @@ user_profiles.tsvector_search or UPPER(user_profiles.tsvector_search\\:\\:text) LIKE %?1% ) and a.status = 'ACTIVATED' ", nativeQuery = true)
+            "from user_profiles left join accounts a on user_profiles.account_id = a.id , to_tsquery('simple', ?1) query " +
+            "where (query @@ user_profiles.tsvector_search) and a.status = 'ACTIVATED' ", nativeQuery = true)
     List<SearchMentorResult> searchAllActivatedMentors(String searchString);
 
     public interface SearchMentorResult{

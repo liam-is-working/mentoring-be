@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -34,8 +35,10 @@ public class BookingController {
     private final BookingService bookingService;
 
     @GetMapping("/mentors")
-    public ResponseEntity<MentorListResponse> getMentors(@RequestParam String[] searchString){
-        return ResponseEntity.ok(userProfileService.getMentorCards(searchString));
+    public ResponseEntity<MentorListResponse> getMentors(@RequestParam(required = false) String searchString,
+                                                         @RequestParam(required = false) Set<String> fields,
+                                                         @RequestParam(required = false) Set<String> categories){
+        return ResponseEntity.ok(userProfileService.getMentorCards(searchString,fields,categories));
     }
 
     @GetMapping("/mentors-recommend")

@@ -14,18 +14,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.bigquery.*;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
-import com.jayway.jsonpath.TypeRef;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
 
@@ -87,7 +84,7 @@ public class UserProfileService {
                     ofNullable(request.getGender()).ifPresent(prof::setGender);
                     ofNullable(request.getAvatarUrl()).ifPresent(prof::setAvatarUrl);
                     ofNullable(request.getCoverUrl()).ifPresent(prof::setCoverUrl);
-                    ofNullable(request.getPhoneNumber()).ifPresent(prof::setPhoneNum);
+                    ofNullable(request.getPhone()).ifPresent(prof::setPhoneNum);
                     ofNullable(request.getDescription()).ifPresent(prof::setDescription);
                     if(request.getActivateAccount())
                         prof.getAccount().setStatus(Account.Status.ACTIVATED.name());
@@ -296,10 +293,11 @@ public class UserProfileService {
 //        }
     }
 
-    public MentorListResponse getMentorCards(){
+    public MentorListResponse getMentorCards(Set<String> fields, Set<String> categories){
         var mentors = userProfileRepository.getAllActivatedMentors();
         var mentorCards = mentors.parallelStream()
                 .map(this::mentorCardFromEntity)
+                .filter(mC -> mC.doesTopicCatMatch(categories) && mC.doesTopicFieldsMatch(fields))
                 .sorted((m1,m2) -> Double.compare(m2.getRatingOptional().orElse(0),m1.getRatingOptional().orElse(0)))
                 .sorted((m1,m2) -> m2.getFollowers()-m1.getFollowers())
                 .toList();
@@ -309,19 +307,40 @@ public class UserProfileService {
         return response;
     }
 
-    public MentorListResponse getMentorCards(String[] searchString){
-        if(searchString == null)
-            searchString = new String[]{};
-        var sanitizedSearchStrings = Arrays.stream(searchString).filter(Objects::nonNull)
-                .map(String::toUpperCase)
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
+//    public String parseMentorSearchStrings(String searchString, String[] fields, String[] categories){
+//        var sqlSearchString = new StringBuilder();
+//        if(fields!=null){
+//            var sqlSearchField = String.join("|",Stream.of(fields)
+//                    .map(s -> s.replaceAll(" ", "&"))
+//                    .map(s -> "(" + s + ")")
+//                    .toList());
+//            sqlSearchString.append(sqlSearchField);
+//        }
+//        if(categories!=null){
+//            var sqlSearchCategory = String.join("|",Stream.of(categories)
+//                    .map(s -> s.replaceAll(" ", "&"))
+//                    .map(s -> "(" + s + ")")
+//                    .toList());
+//            sqlSearchString.append(sqlSearchField);
+//        }
+//    }
+
+    public static String parseSearchString( String searchString){
+        var token = Arrays.stream(searchString.split(" "))
+                .filter(Strings::isNotBlank)
+                .map(s -> " " + s + ":* ")
                 .toList();
+        return String.join("&", token);
+    }
 
-        if(sanitizedSearchStrings.isEmpty()|| Strings.isBlank(String.join(" ", sanitizedSearchStrings)))
-            return getMentorCards();
+    public MentorListResponse getMentorCards(String searchString, Set<String> fields, Set<String> categories){
 
-        var searchResult = userProfileRepository.searchAllActivatedMentors(String.join(" ", sanitizedSearchStrings).trim());
+        if(Strings.isBlank(searchString))
+            return getMentorCards(fields,categories);
+
+        var tsquery = parseSearchString(searchString.trim());
+
+        var searchResult = userProfileRepository.searchAllActivatedMentors(tsquery);
         searchResult.sort((r1,r2) -> Float.compare(r2.getRank(),r1.getRank()));
 
 
@@ -334,7 +353,9 @@ public class UserProfileService {
         var mentorCards = searchResult.stream()
                 .map(sR  -> mentorsMap.get(sR.getAccountId()))
                 .filter(Objects::nonNull)
-                .map(this::mentorCardFromEntity).toList();
+                .map(this::mentorCardFromEntity)
+                .filter(mC -> mC.doesTopicCatMatch(categories) && mC.doesTopicFieldsMatch(fields))
+                .toList();
         response.setMentorCards(mentorCards);
         return response;
     }
