@@ -30,7 +30,6 @@ public class DummyController {
     private final MentorMenteeRatingService mentorMenteeRatingService;
     private final MailService mailService;
     private final AccountsRepository accountsRepository;
-    private final BigQueryService bigQueryService;
     private final UserProfileService userProfileService;
 
     @GetMapping(value = "helloWorld")

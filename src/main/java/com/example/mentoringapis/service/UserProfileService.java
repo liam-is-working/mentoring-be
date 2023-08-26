@@ -1,5 +1,6 @@
 package com.example.mentoringapis.service;
 
+import com.example.mentoringapis.controllers.BookingController;
 import com.example.mentoringapis.entities.*;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.upStreamModels.MentorListResponse;
@@ -15,6 +16,7 @@ import com.google.cloud.bigquery.*;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +29,7 @@ import java.util.stream.Stream;
 import static java.util.Optional.ofNullable;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserProfileService {
     private final UserProfileRepository userProfileRepository;
@@ -118,6 +121,12 @@ public class UserProfileService {
         var prof = userProfileRepository.findUserProfileByAccount_IdWithFollowers(id)
             .orElseThrow(() -> new ResourceNotFoundException(String.format("Cannot find profile with id: %s", id)));
         return prof.getFollowers().stream().map(UserProfileResponse::fromUserProfileMinimal)
+                .toList();
+    }
+
+    public List<UserProfileResponse> getFollowingId(UUID id){
+        return userProfileRepository.fetchFollowingIds(id)
+                .stream().map(fId -> UserProfileResponse.builder().id(fId.toString()).build())
                 .toList();
     }
 
@@ -222,15 +231,7 @@ public class UserProfileService {
                 .build();
     }
 
-    public MentorListResponse getRecommendation(UUID menteeId, String[] searchString) throws InterruptedException {
-        if(searchString == null)
-            searchString = new String[]{};
-        var sanitizedSearchStrings = Arrays.stream(searchString).filter(Objects::nonNull)
-                .map(String::toUpperCase)
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList();
-
+    public MentorListResponse getRecommendation(UUID menteeId, BookingController.SearchMentorRequest request) throws InterruptedException {
         var recommendedList = new ArrayList<UUID>();
 
         var queryString = String.format("SELECT f0_ FROM " +
@@ -245,23 +246,33 @@ public class UserProfileService {
         Job queryJob = bigQuery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
 
 
-        var following = mentorMenteeRepository.findAllByMenteeId(menteeId).stream().map(MentorMentee::getMentorId).collect(Collectors.toList());
-        var topMentors = userProfileRepository.getTopMentors().stream().filter(id -> !following.contains(id)).collect(Collectors.toList());
+        var topMentors = userProfileRepository.getTopMentors(menteeId);
+        var badReviews =  userProfileRepository.getBadReview(menteeId);
 
         queryJob = queryJob.waitFor();
 
         // Get the results.
         try{
             TableResult result = queryJob.getQueryResults();
-            for (var row : result.iterateAll().iterator().next().get(0).getRepeatedValue()){
+            var sortedResult = result.iterateAll().iterator().next().get(0).getRepeatedValue().stream().sorted((row1,row2) -> Double.compare(row2.getRecordValue().get(1).getDoubleValue(), row1.getRecordValue().get(1).getDoubleValue())).toList();
+            for (var row : sortedResult){
                 recommendedList.add(UUID.fromString(row.getRecordValue().get(0).getStringValue()));
             }
-        }catch (Exception ignored){}
+        }catch (Exception ignored){
+            log.error("recommend fetch result error", ignored);
+        }
 
         topMentors.removeIf(recommendedList::contains);
+        topMentors.removeIf(badReviews::contains);
+        recommendedList.removeIf(badReviews::contains);
         if(recommendedList.size()<appConfig.getMaxMentorRecommendation()){
             var toAdd = appConfig.getMaxMentorRecommendation()-recommendedList.size();
             recommendedList.addAll(topMentors.subList(0, Math.min(toAdd, topMentors.size())));
+        }
+
+        if(request!=null){
+            request.setIds(new HashSet<>(recommendedList));
+            return getMentorCards(request);
         }
 
         var mentors = userProfileRepository.getAllActivatedMentors(recommendedList)
@@ -272,15 +283,6 @@ public class UserProfileService {
                 .map(mentors::get)
                 .filter(Objects::nonNull)
                 .map(this::mentorCardFromEntity)
-                .filter(card ->
-                {
-                    if (sanitizedSearchStrings.isEmpty())
-                        return true;
-                    return card.getSearchString()
-                            .stream()
-                            .anyMatch(s -> sanitizedSearchStrings.stream().anyMatch(s::contains));
-
-                })
                 .toList());
         return returnVal;
 
@@ -333,14 +335,19 @@ public class UserProfileService {
         return String.join("&", token);
     }
 
-    public MentorListResponse getMentorCards(String searchString, Set<String> fields, Set<String> categories){
+    public MentorListResponse getMentorCards(BookingController.SearchMentorRequest request){
 
-        if(Strings.isBlank(searchString))
-            return getMentorCards(fields,categories);
+        if(Strings.isBlank(request.getSearchString()))
+            return getMentorCards(request.getFields(),request.getCategories());
 
-        var tsquery = parseSearchString(searchString.trim());
+        var tsquery = parseSearchString(request.getSearchString().trim());
 
-        var searchResult = userProfileRepository.searchAllActivatedMentors(tsquery);
+        List<UserProfileRepository.SearchMentorResult> searchResult;
+        if(request.getIds() != null && !request.getIds().isEmpty())
+            searchResult = userProfileRepository.searchAllActivatedMentors(tsquery, request.getIds());
+        else
+            searchResult = userProfileRepository.searchAllActivatedMentors(tsquery);
+
         searchResult.sort((r1,r2) -> Float.compare(r2.getRank(),r1.getRank()));
 
 
@@ -350,11 +357,11 @@ public class UserProfileService {
         var mentorsMap = mentorsList.stream().collect(Collectors.toMap(UserProfile::getAccountId, up -> up));
 
         var response  = new MentorListResponse();
-        var mentorCards = searchResult.stream()
+        var mentorCards = searchResult.parallelStream()
                 .map(sR  -> mentorsMap.get(sR.getAccountId()))
                 .filter(Objects::nonNull)
                 .map(this::mentorCardFromEntity)
-                .filter(mC -> mC.doesTopicCatMatch(categories) && mC.doesTopicFieldsMatch(fields))
+                .filter(mC -> mC.doesTopicCatMatch(request.getCategories()) && mC.doesTopicFieldsMatch(request.getFields()))
                 .toList();
         response.setMentorCards(mentorCards);
         return response;

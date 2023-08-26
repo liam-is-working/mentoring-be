@@ -18,6 +18,12 @@ import java.util.stream.Collectors;
 @Data
 public class MentorListResponse {
     List<MentorCard> mentorCards;
+    List<String> ids;
+
+    @JsonGetter
+    public List<String> getIds() {
+        return mentorCards.stream().map(MentorCard::getMentorId).toList();
+    }
 
     @Data
     @Builder

@@ -34,6 +34,9 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, UUID> 
             "left join fetch followers.account fa " +
             "where up.accountId = ?1")
     Optional<UserProfile> findUserProfileByAccount_IdWithFollowers(UUID accountId);
+    @Query(value = "select mentor_id from mentor_mentee left join accounts acc on mentor_id = acc.id\n" +
+            "where acc.status = 'ACTIVATED' and mentee_id = ?1", nativeQuery = true)
+    List<UUID> fetchFollowingIds(UUID menteeId);
     @Query("select up from UserProfile up " +
             "left join fetch up.followings following " +
             "left join fetch following.account fa " +
@@ -83,23 +86,30 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, UUID> 
             "where acc.role = 'MENTOR' and acc.status = 'ACTIVATED' and up.accountId in ?1")
     List<UserProfile> getAllTopActivatedMentors(Iterable<UUID> ids);
 
-    @Query(value = "select ranking.mentor_id from\n" +
-            "(select mm.mentor_id, avg(rating) as avg_rating, sum(follow_count.count) as sumFollow\n" +
-            "     from mentor_mentee_rating as mm left join\n" +
-            "         (select mentor_id, count(mentor_id) as count\n" +
-            "         from mentor_mentee group by mentor_id)\n" +
-            "             as follow_count\n" +
-            "        on follow_count.mentor_id = mm.mentor_id\n" +
-            "     GROUP BY mm.mentor_id\n" +
-            "     ORDER BY sumFollow DESC, avg_rating DESC ) as ranking\n" +
-            "WHERE ranking.avg_rating >= 3", nativeQuery = true)
-    List<UUID> getTopMentors();
+    @Query(value = "select COALESCE(rating.receiver_id, followCount.mentor_id) as id from\n" +
+            "((select receiver_id, avg(rating) as avgRate from meeting_feedbacks group by receiver_id) as rating\n" +
+            "full outer join\n" +
+            "(select mentor_id, count(mentor_id) as countFollow from mentor_mentee group by mentor_id) as followCount\n" +
+            "on rating.receiver_id = followCount.mentor_id)\n" +
+            "where (avgRate >= 4 or avgRate isnull) and COALESCE(rating.receiver_id, followCount.mentor_id) not in (select mentor_id from mentor_mentee where mentee_id = ?1)\n" +
+            "order by countFollow DESC, avgRate DESC", nativeQuery = true)
+    List<UUID> getTopMentors(UUID mentee_id);
+
+    @Query(value = "select receiver_id\n" +
+            "from meeting_feedbacks\n" +
+            "where rating < 4 and giver_id = ?1", nativeQuery = true)
+    List<UUID> getBadReview(UUID mentee_id);
 
 
     @Query(value = "select user_profiles.account_id as accountId, ts_rank_cd(tsvector_search, query) as rank " +
             "from user_profiles left join accounts a on user_profiles.account_id = a.id , to_tsquery('simple', ?1) query " +
             "where (query @@ user_profiles.tsvector_search) and a.status = 'ACTIVATED' ", nativeQuery = true)
     List<SearchMentorResult> searchAllActivatedMentors(String searchString);
+
+    @Query(value = "select user_profiles.account_id as accountId, ts_rank_cd(tsvector_search, query) as rank " +
+            "from user_profiles left join accounts a on user_profiles.account_id = a.id , to_tsquery('simple', ?1) query " +
+            "where a.id IN ?2 and a.status = 'ACTIVATED' and (query @@ user_profiles.tsvector_search)   ", nativeQuery = true)
+    List<SearchMentorResult> searchAllActivatedMentors(String searchString, Set<UUID> ids);
 
     public interface SearchMentorResult{
         UUID getAccountId();

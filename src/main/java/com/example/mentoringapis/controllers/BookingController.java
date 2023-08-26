@@ -34,19 +34,27 @@ public class BookingController {
     private final UserProfileService userProfileService;
     private final BookingService bookingService;
 
-    @GetMapping("/mentors")
-    public ResponseEntity<MentorListResponse> getMentors(@RequestParam(required = false) String searchString,
-                                                         @RequestParam(required = false) Set<String> fields,
-                                                         @RequestParam(required = false) Set<String> categories){
-        return ResponseEntity.ok(userProfileService.getMentorCards(searchString,fields,categories));
+    @Data
+    public static class SearchMentorRequest{
+        String searchString;
+        Set<String> fields;
+        Set<String> categories;
+        Set<UUID> ids;
     }
 
-    @GetMapping("/mentors-recommend")
-    public ResponseEntity<MentorListResponse> getMentors(@RequestParam(required = false) String[] searchString,Authentication authentication) throws InterruptedException, MentoringAuthenticationError {
+    @PostMapping("/mentors")
+    public ResponseEntity<MentorListResponse> getMentors(@RequestBody(required = false) SearchMentorRequest request){
+        if(request == null)
+            request = new SearchMentorRequest();
+        return ResponseEntity.ok(userProfileService.getMentorCards(request));
+    }
+
+    @PostMapping("/mentors-recommend")
+    public ResponseEntity<MentorListResponse> getMentors(Authentication authentication, @RequestBody(required = false) SearchMentorRequest request) throws InterruptedException, MentoringAuthenticationError {
         UUID currentUserId = UUID.randomUUID();
         if(authentication!=null)
          currentUserId = AuthorizationUtils.getCurrentUserUuid(authentication);
-        return ResponseEntity.ok(userProfileService.getRecommendation(currentUserId,searchString));
+        return ResponseEntity.ok(userProfileService.getRecommendation(currentUserId, request));
     }
 
     @GetMapping("/{bookingId}/logs")
