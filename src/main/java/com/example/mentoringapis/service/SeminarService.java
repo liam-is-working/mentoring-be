@@ -99,7 +99,13 @@ public class SeminarService {
 //        if(currentSeminar.getDepartment()==null || departmentId==null || currentSeminar.getDepartment().getId() != departmentId)
 //            throw new ClientBadRequestError("Staff doesnt belong to seminar's department");
 
+
         Set<UserProfile> mentorProfiles = getMentorProfiles(request.getMentorIds());
+
+        var currentMentorIds = currentSeminar.getMentors().stream().map(UserProfile::getAccountId).collect(Collectors.toSet());
+        var mentorDiffs = mentorProfiles.stream().filter(mf -> currentMentorIds.contains(mf.getAccountId())).collect(Collectors.toSet());
+
+
         ofNullable(mentorProfiles).ifPresent(currentSeminar::setMentors);
         ofNullable(request.getDescription()).ifPresent(currentSeminar::setDescription);
         ofNullable(request.getLocation()).ifPresent(currentSeminar::setLocation);
@@ -115,6 +121,21 @@ public class SeminarService {
         }
 
         seminarRepository.save(currentSeminar);
+
+        //send notify email
+        if(!mentorDiffs.isEmpty() ){
+            mentorDiffs.parallelStream().forEach(
+                    p -> {
+                        var notification = new MentorNotification(currentSeminar, p);
+                        var pId = p.getAccountId();
+                        //update search vector
+                        CompletableFuture.runAsync(() -> userProfileRepository.updateTsvSearch(pId.toString()));
+                        //send email to follower and mentor
+                        CompletableFuture.runAsync(() -> mailService.sendMentorNotificationMail(notification, pId));
+                    }
+            );
+        }
+
         return SeminarResponse.fromSeminarEntity(currentSeminar);
     }
 
@@ -162,7 +183,7 @@ public class SeminarService {
         //schedule report email
         var sendTime = newSeminar.getEndTime().plusMinutes(appConfig.getSeminarReportEmailDelay());
         var zonedSendTime = ZonedDateTime.of(sendTime, DateTimeUtils.VIET_NAM_ZONE);
-        BackgroundJob.schedule(zonedSendTime,() -> mailService.sendEmail(newSeminar.getId(), null));
+        BackgroundJob.schedule(zonedSendTime,() -> mailService.sendReportEmail(newSeminar.getId(),newSeminar.getEndTime(), null));
 
         //send notify email
         if(mentorProfiles != null){
