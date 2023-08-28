@@ -159,7 +159,12 @@ public class SeminarService {
         seminarRepository.save(newSeminar);
         fireStoreService.createDiscussionRoom(newSeminar.getId());
 
-        //send email
+        //schedule report email
+        var sendTime = newSeminar.getEndTime().plusMinutes(appConfig.getSeminarReportEmailDelay());
+        var zonedSendTime = ZonedDateTime.of(sendTime, DateTimeUtils.VIET_NAM_ZONE);
+        BackgroundJob.schedule(zonedSendTime,() -> mailService.sendEmail(newSeminar.getId(), null));
+
+        //send notify email
         if(mentorProfiles != null){
             mentorProfiles.parallelStream().forEach(
                     p -> {

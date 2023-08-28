@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -248,6 +249,52 @@ public class MailService {
         } catch (MailjetException | NullPointerException e) {
             log.warn("Email exception", e);
         }    }
+
+
+    public List<UUID> sendReportEmail(Long seminarId, LocalDateTime seminarEndTimeSinceSchedule, List<UUID> selectedMentorIds) throws IOException {
+        var seminarOptional = seminarRepository.findById(seminarId);
+        if(seminarOptional.isEmpty()){
+            log.info(String.format("Cancel mail schedule since cannot find seminar with Id: %s", seminarId));
+            return List.of();
+        }
+        var seminar = seminarOptional.get();
+
+        if (!Objects.equals(seminar.getEndTime(), seminarEndTimeSinceSchedule)){
+            log.info(String.format("Cancel report mail schedule of seminar Id: %s, since seminar endTime changed", seminarId));
+            return List.of();
+        }
+
+        CompletableFuture<SeminarFeedbackReportResponse> seminarReportFuture;
+        try {
+            seminarReportFuture = feedbackService.getFeedbackReport(seminarId).toFuture();
+        }catch (ResourceNotFoundException e) {
+            log.info(String.format("Cancel mail since cannot find seminar with Id: %s", seminarId));
+            return List.of();
+        }
+        if(selectedMentorIds == null){
+            selectedMentorIds = seminar.getMentors().stream().map(UserProfile::getAccountId).collect(Collectors.toList());
+        }
+
+
+        var seminarReport = seminarReportFuture.join();
+        if(seminarReport.getReportStatistic().isEmpty()){
+            log.info(String.format("Seminar %s doesnt have any feedback, cancel mail action!", seminarId));
+            return List.of();
+        }
+
+        for(UserProfile mentor : seminar.getMentors()){
+            if(selectedMentorIds.contains(mentor.getAccountId())){
+                try {
+                    sendEmail(mentor.getAccount(), seminar, seminarReport);
+                } catch (MailjetException e) {
+                    log.error(e.getMessage());
+                    selectedMentorIds.remove(mentor.getAccountId());
+                }
+            }
+        }
+
+        return selectedMentorIds;
+    }
 
     public List<UUID> sendEmail(Long seminarId, List<UUID> selectedMentorIds) throws IOException {
         var seminarOptional = seminarRepository.findById(seminarId);

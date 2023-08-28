@@ -52,6 +52,8 @@ public class BookingController {
     @PostMapping("/mentors-recommend")
     public ResponseEntity<MentorListResponse> getMentors(Authentication authentication, @RequestBody(required = false) SearchMentorRequest request) throws InterruptedException, MentoringAuthenticationError {
         UUID currentUserId = UUID.randomUUID();
+        if(request == null)
+            request = new SearchMentorRequest();
         if(authentication!=null)
          currentUserId = AuthorizationUtils.getCurrentUserUuid(authentication);
         return ResponseEntity.ok(userProfileService.getRecommendation(currentUserId, request));

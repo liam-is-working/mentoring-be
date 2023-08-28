@@ -92,7 +92,7 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, UUID> 
             "(select mentor_id, count(mentor_id) as countFollow from mentor_mentee group by mentor_id) as followCount\n" +
             "on rating.receiver_id = followCount.mentor_id)\n" +
             "where (avgRate >= 4 or avgRate isnull) and COALESCE(rating.receiver_id, followCount.mentor_id) not in (select mentor_id from mentor_mentee where mentee_id = ?1)\n" +
-            "order by countFollow DESC, avgRate DESC", nativeQuery = true)
+            "order by countFollow DESC NULLS LAST, avgRate DESC NULLS LAST", nativeQuery = true)
     List<UUID> getTopMentors(UUID mentee_id);
 
     @Query(value = "select receiver_id\n" +

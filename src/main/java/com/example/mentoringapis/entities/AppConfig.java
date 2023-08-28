@@ -26,9 +26,14 @@ public class AppConfig {
     private int reminderEmailDelay;
     private int maxMentorRecommendation;
 
+
     @PrePersist
     protected void onCreate() {
         createdDate = ZonedDateTime.now().withZoneSameInstant(DateTimeUtils.VIET_NAM_ZONE);
+        setMaxCallDuration(120);
+        setReminderEmailDelay(30);
+        setMaxMentorRecommendation(10);
+        setInvitationEmailDelay(5);
     }
 
     private ZonedDateTime createdDate;
