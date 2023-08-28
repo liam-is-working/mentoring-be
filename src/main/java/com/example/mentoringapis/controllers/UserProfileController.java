@@ -77,6 +77,11 @@ public class UserProfileController {
         return ResponseEntity.ok(userProfileService.getFollowing(profileId));
     }
 
+    @GetMapping("/{profileId}/followingIds")
+    public ResponseEntity<List<UserProfileResponse>> getFollowingIds(@PathVariable UUID profileId) throws ResourceNotFoundException {
+        return ResponseEntity.ok(userProfileService.getFollowingId(profileId));
+    }
+
 
     @PostMapping("/follow")
     public ResponseEntity follow(Authentication authentication, @RequestParam(value = "mentor") UUID mentorId) throws MentoringAuthenticationError {

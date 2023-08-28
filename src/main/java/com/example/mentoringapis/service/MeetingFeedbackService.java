@@ -1,5 +1,6 @@
 package com.example.mentoringapis.service;
 
+import com.example.mentoringapis.entities.Account;
 import com.example.mentoringapis.entities.MeetingFeedback;
 import com.example.mentoringapis.entities.UserProfile;
 import com.example.mentoringapis.errors.ClientBadRequestError;
@@ -76,6 +77,7 @@ public class MeetingFeedbackService {
                 .orElse(meetingFeedbackRepository.findAllByBooking(bookingId));
 
         var feedbackCardList = feedbacks.stream().map(MeetingFeedbackResponse.MeetingFeedbackCard::fromEntity)
+                .filter(fb -> Account.Status.ACTIVATED.name().equalsIgnoreCase(fb.getGiver().getStatus()))
                 .toList();
 
         return MeetingFeedbackResponse.builder().feedbacks(feedbackCardList).build();

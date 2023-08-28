@@ -1,7 +1,7 @@
 version: '2'
 services:
   app:
-    image: 'liamisworking/mentoring-api:v1'
+    image: 'liamisworking/mentoring-api:v2'
     container_name: app
     depends_on:
       - db

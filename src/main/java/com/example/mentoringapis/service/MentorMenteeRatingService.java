@@ -48,7 +48,7 @@ public class MentorMenteeRatingService {
 
             var avg = avgRating.get(id);
             if(followings.removeIf(x -> x.getMenteeId().equals(id.getMenteeId()) && x.getMentorId().equals(id.getMentorId())))
-                avg = 10f;
+                avg = 6f;
             rating.setRating(avg);
 
             if(avg != null)

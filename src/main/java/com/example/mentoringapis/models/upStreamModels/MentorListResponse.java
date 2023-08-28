@@ -2,6 +2,7 @@ package com.example.mentoringapis.models.upStreamModels;
 
 import com.example.mentoringapis.entities.MeetingFeedback;
 import com.example.mentoringapis.entities.Topic;
+import com.example.mentoringapis.entities.TopicField;
 import com.example.mentoringapis.entities.UserProfile;
 import com.example.mentoringapis.models.upStreamModels.CreateTopicRequest;
 import com.example.mentoringapis.models.upStreamModels.TopicDetailResponse;
@@ -17,6 +18,12 @@ import java.util.stream.Collectors;
 @Data
 public class MentorListResponse {
     List<MentorCard> mentorCards;
+    List<String> ids;
+
+    @JsonGetter
+    public List<String> getIds() {
+        return mentorCards.stream().map(MentorCard::getMentorId).toList();
+    }
 
     @Data
     @Builder
@@ -38,6 +45,22 @@ public class MentorListResponse {
             if(ratingOptional!= null && ratingOptional.isPresent())
                 return String.format("%.2f", ratingOptional.getAsDouble());
             return null;
+        }
+
+        public boolean doesTopicFieldsMatch(Set<String> fields){
+            if(fields == null || fields.isEmpty())
+                return true;
+            return topics.stream()
+                    .map(TopicDetailResponse::getField)
+                    .anyMatch(fields::contains);
+        }
+
+        public boolean doesTopicCatMatch(Set<String> categories){
+            if(categories == null || categories.isEmpty())
+                return true;
+            return topics.stream()
+                    .map(TopicDetailResponse::getCategory)
+                    .anyMatch(categories::contains);
         }
 
         @JsonGetter()

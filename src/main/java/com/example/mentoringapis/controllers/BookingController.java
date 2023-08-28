@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -33,17 +34,29 @@ public class BookingController {
     private final UserProfileService userProfileService;
     private final BookingService bookingService;
 
-    @GetMapping("/mentors")
-    public ResponseEntity<MentorListResponse> getMentors(@RequestParam String[] searchString){
-        return ResponseEntity.ok(userProfileService.getMentorCards(searchString));
+    @Data
+    public static class SearchMentorRequest{
+        String searchString;
+        Set<String> fields;
+        Set<String> categories;
+        Set<UUID> ids;
     }
 
-    @GetMapping("/mentors-recommend")
-    public ResponseEntity<MentorListResponse> getMentors(@RequestParam(required = false) String[] searchString,Authentication authentication) throws InterruptedException, MentoringAuthenticationError {
+    @PostMapping("/mentors")
+    public ResponseEntity<MentorListResponse> getMentors(@RequestBody(required = false) SearchMentorRequest request){
+        if(request == null)
+            request = new SearchMentorRequest();
+        return ResponseEntity.ok(userProfileService.getMentorCards(request));
+    }
+
+    @PostMapping("/mentors-recommend")
+    public ResponseEntity<MentorListResponse> getMentors(Authentication authentication, @RequestBody(required = false) SearchMentorRequest request) throws InterruptedException, MentoringAuthenticationError {
         UUID currentUserId = UUID.randomUUID();
+        if(request == null)
+            request = new SearchMentorRequest();
         if(authentication!=null)
          currentUserId = AuthorizationUtils.getCurrentUserUuid(authentication);
-        return ResponseEntity.ok(userProfileService.getRecommendation(currentUserId,searchString));
+        return ResponseEntity.ok(userProfileService.getRecommendation(currentUserId, request));
     }
 
     @GetMapping("/{bookingId}/logs")

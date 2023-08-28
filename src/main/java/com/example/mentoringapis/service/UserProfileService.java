@@ -1,5 +1,6 @@
 package com.example.mentoringapis.service;
 
+import com.example.mentoringapis.controllers.BookingController;
 import com.example.mentoringapis.entities.*;
 import com.example.mentoringapis.errors.ResourceNotFoundException;
 import com.example.mentoringapis.models.upStreamModels.MentorListResponse;
@@ -14,22 +15,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.bigquery.*;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
-import com.jayway.jsonpath.TypeRef;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserProfileService {
     private final UserProfileRepository userProfileRepository;
@@ -82,12 +82,11 @@ public class UserProfileService {
     public UserProfileResponse update(UserProfileUpdateRequest request, UUID profileId){
         return userProfileRepository.findUserProfileByAccount_Id(profileId)
                 .map(prof -> {
-                    var isNameTheSame = Objects.equals(request.getFullName(),prof.getFullName());
                     ofNullable(request.getFullName()).ifPresent(prof::setFullName);
                     ofNullable(request.getGender()).ifPresent(prof::setGender);
                     ofNullable(request.getAvatarUrl()).ifPresent(prof::setAvatarUrl);
                     ofNullable(request.getCoverUrl()).ifPresent(prof::setCoverUrl);
-                    ofNullable(request.getPhoneNumber()).ifPresent(prof::setPhoneNum);
+                    ofNullable(request.getPhone()).ifPresent(prof::setPhoneNum);
                     ofNullable(request.getDescription()).ifPresent(prof::setDescription);
                     if(request.getActivateAccount())
                         prof.getAccount().setStatus(Account.Status.ACTIVATED.name());
@@ -95,12 +94,12 @@ public class UserProfileService {
                         prof.setDob(Date.valueOf(request.getDob()));
                     }
 
-                    //update search vector
-                    if(!isNameTheSame)
-                        CompletableFuture.runAsync(() -> userProfileRepository.updateTsvSearch(profileId.toString()));
+                    var result = userProfileRepository.save(prof);
+
+                    CompletableFuture.runAsync(() -> userProfileRepository.updateTsvSearch(profileId.toString())).join();
                     fireStoreService.updateUserProfile(request.getFullName(), request.getAvatarUrl(),
                             prof.getAccount().getRole(), prof.getAccount().getEmail(), profileId);
-                    return userProfileRepository.save(prof);
+                    return result;
                 }).map(UserProfileResponse::fromUserProfileMinimal).orElse(null);
     }
 
@@ -121,6 +120,12 @@ public class UserProfileService {
         var prof = userProfileRepository.findUserProfileByAccount_IdWithFollowers(id)
             .orElseThrow(() -> new ResourceNotFoundException(String.format("Cannot find profile with id: %s", id)));
         return prof.getFollowers().stream().map(UserProfileResponse::fromUserProfileMinimal)
+                .toList();
+    }
+
+    public List<UserProfileResponse> getFollowingId(UUID id){
+        return userProfileRepository.fetchFollowingIds(id)
+                .stream().map(fId -> UserProfileResponse.builder().id(fId.toString()).build())
                 .toList();
     }
 
@@ -225,15 +230,7 @@ public class UserProfileService {
                 .build();
     }
 
-    public MentorListResponse getRecommendation(UUID menteeId, String[] searchString) throws InterruptedException {
-        if(searchString == null)
-            searchString = new String[]{};
-        var sanitizedSearchStrings = Arrays.stream(searchString).filter(Objects::nonNull)
-                .map(String::toUpperCase)
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList();
-
+    public MentorListResponse getRecommendation(UUID menteeId, BookingController.SearchMentorRequest request) throws InterruptedException {
         var recommendedList = new ArrayList<UUID>();
 
         var queryString = String.format("SELECT f0_ FROM " +
@@ -248,58 +245,60 @@ public class UserProfileService {
         Job queryJob = bigQuery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
 
 
-        var following = mentorMenteeRepository.findAllByMenteeId(menteeId).stream().map(MentorMentee::getMentorId).collect(Collectors.toList());
-        var topMentors = userProfileRepository.getTopMentors().stream().filter(id -> !following.contains(id)).collect(Collectors.toList());
+        var topMentors = userProfileRepository.getTopMentors(menteeId);
+        var badReviews =  userProfileRepository.getBadReview(menteeId);
 
         queryJob = queryJob.waitFor();
 
         // Get the results.
         try{
             TableResult result = queryJob.getQueryResults();
-            for (var row : result.iterateAll().iterator().next().get(0).getRepeatedValue()){
+            var sortedResult = result.iterateAll().iterator().next().get(0).getRepeatedValue().stream().sorted((row1,row2) -> Double.compare(row2.getRecordValue().get(1).getDoubleValue(), row1.getRecordValue().get(1).getDoubleValue())).toList();
+            for (var row : sortedResult){
                 recommendedList.add(UUID.fromString(row.getRecordValue().get(0).getStringValue()));
             }
-        }catch (Exception ignored){}
+        }catch (Exception ignored){
+            log.error("recommend fetch result error", ignored);
+        }
 
         topMentors.removeIf(recommendedList::contains);
-        if(recommendedList.size()<appConfig.getMaxMentorRecommendation()){
-            var toAdd = appConfig.getMaxMentorRecommendation()-recommendedList.size();
+        topMentors.removeIf(badReviews::contains);
+        recommendedList.removeIf(badReviews::contains);
+        var max = appConfig.getMaxMentorRecommendation();
+        if(max<=0)
+            max = 10;
+        if(recommendedList.size()<max){
+            var toAdd = max-recommendedList.size();
             recommendedList.addAll(topMentors.subList(0, Math.min(toAdd, topMentors.size())));
         }
 
-        var mentors = userProfileRepository.getAllActivatedMentors(recommendedList)
-                .stream().collect(Collectors.toMap(UserProfile::getAccountId, m-> m));
+        if(request.getIds() == null && request.getCategories() == null && request.getFields() == null && request.getSearchString() == null)
+        {
+            var mentors = userProfileRepository.getAllActivatedMentors(recommendedList)
+                    .stream().collect(Collectors.toMap(UserProfile::getAccountId, m-> m));
 
-        var returnVal = new MentorListResponse();
-        returnVal.setMentorCards(recommendedList.stream()
-                .map(mentors::get)
-                .filter(Objects::nonNull)
-                .map(this::mentorCardFromEntity)
-                .filter(card ->
-                {
-                    if (sanitizedSearchStrings.isEmpty())
-                        return true;
-                    return card.getSearchString()
-                            .stream()
-                            .anyMatch(s -> sanitizedSearchStrings.stream().anyMatch(s::contains));
+            var returnVal = new MentorListResponse();
+            returnVal.setMentorCards(recommendedList.stream()
+                    .map(mentors::get)
+                    .filter(Objects::nonNull)
+                    .map(this::mentorCardFromEntity)
+                    .toList());
+            return returnVal;
+        }
 
-                })
-                .toList());
-        return returnVal;
-
-        // Print all pages of the results.
-//        for (FieldValueList row : result.iterateAll()) {
-//            // String type
-//            String url = row.get("url").getStringValue();
-//            String viewCount = row.get("view_count").getStringValue();
-//            System.out.printf("%s : %s views\n", url, viewCount);
-//        }
+        request.setIds(new HashSet<>(recommendedList));
+        return getMentorCards(request);
     }
 
-    public MentorListResponse getMentorCards(){
-        var mentors = userProfileRepository.getAllActivatedMentors();
+    public MentorListResponse getMentorCards(Set<String> fields, Set<String> categories, Set<UUID> ids){
+        List<UserProfile> mentors;
+        if(ids==null)
+            mentors = userProfileRepository.getAllActivatedMentors();
+        else
+            mentors = userProfileRepository.getAllActivatedMentors(ids);
         var mentorCards = mentors.parallelStream()
                 .map(this::mentorCardFromEntity)
+                .filter(mC -> mC.doesTopicCatMatch(categories) && mC.doesTopicFieldsMatch(fields))
                 .sorted((m1,m2) -> Double.compare(m2.getRatingOptional().orElse(0),m1.getRatingOptional().orElse(0)))
                 .sorted((m1,m2) -> m2.getFollowers()-m1.getFollowers())
                 .toList();
@@ -309,19 +308,45 @@ public class UserProfileService {
         return response;
     }
 
-    public MentorListResponse getMentorCards(String[] searchString){
-        if(searchString == null)
-            searchString = new String[]{};
-        var sanitizedSearchStrings = Arrays.stream(searchString).filter(Objects::nonNull)
-                .map(String::toUpperCase)
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
+//    public String parseMentorSearchStrings(String searchString, String[] fields, String[] categories){
+//        var sqlSearchString = new StringBuilder();
+//        if(fields!=null){
+//            var sqlSearchField = String.join("|",Stream.of(fields)
+//                    .map(s -> s.replaceAll(" ", "&"))
+//                    .map(s -> "(" + s + ")")
+//                    .toList());
+//            sqlSearchString.append(sqlSearchField);
+//        }
+//        if(categories!=null){
+//            var sqlSearchCategory = String.join("|",Stream.of(categories)
+//                    .map(s -> s.replaceAll(" ", "&"))
+//                    .map(s -> "(" + s + ")")
+//                    .toList());
+//            sqlSearchString.append(sqlSearchField);
+//        }
+//    }
+
+    public static String parseSearchString( String searchString){
+        var token = Arrays.stream(searchString.split(" "))
+                .filter(Strings::isNotBlank)
+                .map(s -> " " + s + ":* ")
                 .toList();
+        return String.join("&", token);
+    }
 
-        if(sanitizedSearchStrings.isEmpty()|| Strings.isBlank(String.join(" ", sanitizedSearchStrings)))
-            return getMentorCards();
+    public MentorListResponse getMentorCards(BookingController.SearchMentorRequest request){
 
-        var searchResult = userProfileRepository.searchAllActivatedMentors(String.join(" ", sanitizedSearchStrings).trim());
+        if(Strings.isBlank(request.getSearchString()))
+            return getMentorCards(request.getFields(),request.getCategories(), request.getIds());
+
+        var tsquery = parseSearchString(request.getSearchString().trim());
+
+        List<UserProfileRepository.SearchMentorResult> searchResult;
+        if(request.getIds() != null)
+            searchResult = userProfileRepository.searchAllActivatedMentors(tsquery, request.getIds());
+        else
+            searchResult = userProfileRepository.searchAllActivatedMentors(tsquery);
+
         searchResult.sort((r1,r2) -> Float.compare(r2.getRank(),r1.getRank()));
 
 
@@ -331,10 +356,12 @@ public class UserProfileService {
         var mentorsMap = mentorsList.stream().collect(Collectors.toMap(UserProfile::getAccountId, up -> up));
 
         var response  = new MentorListResponse();
-        var mentorCards = searchResult.stream()
+        var mentorCards = searchResult.parallelStream()
                 .map(sR  -> mentorsMap.get(sR.getAccountId()))
                 .filter(Objects::nonNull)
-                .map(this::mentorCardFromEntity).toList();
+                .map(this::mentorCardFromEntity)
+                .filter(mC -> mC.doesTopicCatMatch(request.getCategories()) && mC.doesTopicFieldsMatch(request.getFields()))
+                .toList();
         response.setMentorCards(mentorCards);
         return response;
     }

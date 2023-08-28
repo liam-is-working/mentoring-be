@@ -2,6 +2,7 @@ package com.example.mentoringapis.unit;
 
 import com.example.mentoringapis.configurations.MentoringApisConfig;
 import com.example.mentoringapis.entities.UserProfile;
+import com.example.mentoringapis.service.UserProfileService;
 import com.jayway.jsonpath.JsonPath;
 import com.mailjet.client.ClientOptions;
 import com.mailjet.client.MailjetClient;
@@ -29,6 +30,11 @@ import java.util.Optional;
 @SpringBootTest(classes = MentoringApisConfig.class)
 public class TempTest {
 
+    @Test
+    void testParseQueryString(){
+        var result = UserProfileService.parseSearchString("Đào   Hữu Đức Dev");
+        hashCode();
+    }
 
     @Data
     public static class ScheduleRequestBody{

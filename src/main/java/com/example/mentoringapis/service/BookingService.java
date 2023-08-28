@@ -40,7 +40,7 @@ public class BookingService {
         var bookingMentee = bookingMenteeRepository.findAllByMenteeId(studentId);
         return bookingMentee.stream()
                 .filter(bm -> Booking.Status.REQUESTED.name().equals(bm.getBooking().getStatus()))
-                .count() <= appConfig.getMaxRequestedBooking();
+                .count() < appConfig.getMaxRequestedBooking();
     }
 
     public List<MeetingLogResponse> getMeetingLogs(long id) {
@@ -179,7 +179,7 @@ public class BookingService {
                 .filter(id -> bookingsOfMember.stream()
                                 .filter(bm -> bm.getMenteeId().equals(id)
                                         && Booking.Status.REQUESTED.name().equals(bm.getBooking().getStatus()))
-                                .count() > appConfig.getMaxRequestedBooking())
+                                .count() == appConfig.getMaxRequestedBooking())
                 .map(id -> bookingsOfMember.stream().filter(bm -> bm.getMenteeId().equals(id)).findFirst().map(BookingMentee::getMentee).orElse(null))
                 .collect(Collectors.toList());
 
